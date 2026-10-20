@@ -50,12 +50,12 @@
   <p data-t="pitch">Kilo é um app para registrar seus treinos e sua alimentação em um só lugar. Em breve no iPhone, grátis.</p>
 
   <section id="form-card">
-    <form id="join" novalidate>
+    <form id="join" method="post" action="#" novalidate>
       <label for="email" data-t="emailLabel">Seu e-mail</label>
-      <input type="email" id="email" name="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required placeholder="voce@exemplo.com">
+      <input type="email" id="email" autocomplete="email" aria-describedby="status" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required placeholder="voce@exemplo.com">
       <div class="trap" aria-hidden="true">
-        <label for="website">Website</label>
-        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        <label for="kx-check">Não preencha</label>
+        <input type="text" id="kx-check" tabindex="-1" autocomplete="off">
       </div>
       <button type="submit" class="join" id="join-button" data-t="button">Entrar na lista de espera</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
@@ -66,7 +66,7 @@
   <section class="done" id="done" hidden tabindex="-1">
     <h2 data-t="doneTitle">Pronto!</h2>
     <p data-t="doneText">Você vai ser um dos primeiros a saber quando o Kilo chegar.</p>
-    <p class="muted small" data-t="doneLeave">Para sair da lista, use o link no nosso e-mail ou escreva para contato@kiloapp.com.br.</p>
+    <p class="muted small" data-t="doneLeave">Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.</p>
   </section>
 
   <footer class="muted"><span data-t="questions">Dúvidas:</span> <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a> · © 2026 Kilo</footer>
@@ -87,7 +87,7 @@
       privacy: 'Privacidade',
       doneTitle: 'Pronto!',
       doneText: 'Você vai ser um dos primeiros a saber quando o Kilo chegar.',
-      doneLeave: 'Para sair da lista, use o link no nosso e-mail ou escreva para contato@kiloapp.com.br.',
+      doneLeave: 'Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.',
       questions: 'Dúvidas:',
       invalid: 'Confira o e-mail. Parece que falta alguma coisa.',
       busy: 'Muita gente entrando agora. Tente de novo em alguns minutos.',
@@ -106,7 +106,7 @@
       privacy: 'Privacy',
       doneTitle: 'Done!',
       doneText: 'You will be one of the first to know when Kilo arrives.',
-      doneLeave: 'To leave the list, use the link in our email or write to contato@kiloapp.com.br.',
+      doneLeave: 'To leave the list, use the link in the launch email or write to contato@kiloapp.com.br.',
       questions: 'Questions:',
       invalid: 'Check the email. It looks like something is missing.',
       busy: 'Lots of people are joining right now. Try again in a few minutes.',
@@ -135,13 +135,19 @@
     toggle.lang = t.toggleLang;
     document.getElementById('privacy-link').href = '/lista/privacidade/' + (lang === 'en' ? '?lang=en' : '');
     if (sending) button.textContent = t.sending;
+    clearError();
+  }
+
+  function clearError() {
     status.textContent = '';
     status.className = 'status';
+    email.removeAttribute('aria-invalid');
   }
 
   function showError(key) {
     status.textContent = TEXT[lang][key];
     status.className = 'status error';
+    if (key === 'invalid') email.setAttribute('aria-invalid', 'true');
   }
 
   document.getElementById('lang-toggle').addEventListener('click', function () {
@@ -159,12 +165,11 @@
     sending = true;
     button.disabled = true;
     button.textContent = TEXT[lang].sending;
-    status.textContent = '';
-    status.className = 'status';
+    clearError();
     fetch(config.url + '/rest/v1/rpc/join_waitlist', {
       method: 'POST',
       headers: { 'content-type': 'application/json', apikey: config.key },
-      body: JSON.stringify({ p_email: value, p_origem: origem, p_lang: lang, p_website: document.getElementById('website').value })
+      body: JSON.stringify({ p_email: value, p_origem: origem, p_lang: lang, p_website: document.getElementById('kx-check').value })
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) { return { ok: response.ok, body: body }; });
     }).then(function (result) {
