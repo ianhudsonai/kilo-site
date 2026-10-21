@@ -34,6 +34,12 @@ The "Quanto custaria tudo isso?" block shows real Brazilian prices with no app o
 - There is no canonical in the HTML: `site.js` adds it, since Google asks that JavaScript never change one already there. Pages with `noindex` carry no canonical.
 - App details (MobileApplication) wait for the App Store listing: Google reports an app without real ratings as an error, and ratings are never made up. Add them at launch with the App Store link.
 
+## Visitor counter
+
+`assets/site.js` can load Umami Cloud, a cookie-free counter with its data in the EU region. It stays off while `COUNTER` holds empty values. Switch it on only together with its section on the waitlist privacy page, once ian has approved that text: paste the `src` and `data-website-id` from Umami's tracking code into `COUNTER`.
+
+It counts pages, sources (only the `origem` and `lang` parts of the address), scroll depth (`rolagem`), taps on the join buttons (`entrar-na-lista`), joins (`entrou`) and the QR card (`qr-mostrado`, `qr-fechado`). It never counts an email. If the counter is blocked or broken, the page works the same.
+
 ## Checking the site
 
 ```sh
