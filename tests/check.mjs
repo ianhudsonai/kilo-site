@@ -231,7 +231,7 @@ await check('"O Kilo aprende com você" explains the three things Kilo learns', 
   const section = v.page.locator('section#aprende');
   await section.getByRole('heading', { level: 2, name: 'O Kilo aprende com você' }).waitFor();
   const titles = await section.getByRole('heading', { level: 3 }).allInnerTexts();
-  expect(JSON.stringify(titles) === JSON.stringify(['A carga da próxima série', 'Seu gasto real', 'Check-in semanal']), `blocks read ${JSON.stringify(titles)}`);
+  expect(JSON.stringify(titles) === JSON.stringify(['A carga da próxima série', 'Seu gasto diário real', 'Check-in semanal']), `blocks read ${JSON.stringify(titles)}`);
   await v.close();
 });
 
@@ -271,28 +271,53 @@ await check('six extras, the privacy promise and the six-question FAQ are on the
   await v.close();
 });
 
-await check('every text on the page has an English version', async () => {
+// The page's words as site.js holds them, so the checks compare the page with the table instead of trusting it.
+const TEXT = (() => {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
+  const start = js.indexOf('var TEXT = ') + 'var TEXT = '.length;
+  return Function(`return ${js.slice(start, js.indexOf('\n  };', start) + 4)}`)();
+})();
+
+await check('every text and image description shows its own words in Portuguese and in English', async () => {
   const v = await visitor();
   await v.page.goto(base + '/');
-  const pt = await v.page.locator('[data-t]').evaluateAll(els => els.map(el => [el.getAttribute('data-t'), el.textContent.trim()]));
-  await v.page.getByRole('button', { name: 'English' }).click();
-  const en = await v.page.locator('[data-t]').evaluateAll(els => els.map(el => el.textContent.trim()));
-  // Words that are the same in both languages.
-  const same = new Set(['Kilo']);
-  const missing = pt.filter(([key, text], i) => !en[i] || (en[i] === text && !same.has(text))).map(([key]) => key);
-  expect(missing.length === 0, `no English for: ${[...new Set(missing)].join(', ')}`);
-  const altsPt = await v.page.locator('[data-t-alt]').count();
-  expect(altsPt >= 4, `expected the hero and 3 screens to have translated alt text, saw ${altsPt}`);
+  const read = () => v.page.evaluate(() => ({
+    texts: [...document.querySelectorAll('[data-t]')].map(el => [el.getAttribute('data-t'), el.textContent]),
+    alts: [...document.querySelectorAll('[data-t-alt]')].map(el => [el.getAttribute('data-t-alt'), el.getAttribute('alt')]),
+  }));
+  const seen = {};
+  for (const lang of ['pt', 'en']) {
+    if (lang === 'en') await v.page.getByRole('button', { name: 'English' }).click();
+    const { texts, alts } = await read();
+    for (const [key, text] of [...texts, ...alts]) {
+      expect(typeof TEXT[lang][key] === 'string' && TEXT[lang][key].trim() !== '', `${lang} has no words for "${key}"`);
+      expect(text === TEXT[lang][key], `${lang} "${key}" shows "${text}"`);
+    }
+    seen[lang] = new Map([...texts, ...alts]);
+  }
+  const untranslated = [...seen.pt].filter(([key, text]) => seen.en.get(key) === text).map(([key]) => key);
+  expect(untranslated.length === 0, `same words in both languages: ${untranslated.join(', ')}`);
+  expect(seen.pt.size >= 60, `expected the whole page to use the text table, saw ${seen.pt.size} keys`);
   await v.close();
-  return `${pt.length} texts`;
+  return `${seen.pt.size} keys`;
 });
 
-await check('no sideways scroll on a small phone, in light and dark mode', async () => {
-  for (const colorScheme of ['light', 'dark']) {
-    const v = await visitor({ viewport: { width: 375, height: 667 }, colorScheme });
+await check('the app screens below the hero show their top edge on a phone (only the hero screenshot is shifted)', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const margins = await v.page.locator('#telas img').evaluateAll(els => els.map(el => getComputedStyle(el).marginTop));
+  expect(margins.every(m => m === '0px'), `screen margins are ${margins.join(', ')}`);
+  const hero = await v.page.locator('.hero .phone img').evaluate(el => getComputedStyle(el).marginTop);
+  expect(hero !== '0px', 'the hero screenshot lost its phone offset');
+  await v.close();
+});
+
+await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
+  for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
+    const v = await visitor({ viewport, colorScheme });
     await v.page.goto(base + '/');
     const wide = await v.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(wide <= 0, `${colorScheme}: page is ${wide}px wider than the screen`);
+    expect(wide <= 0, `${colorScheme} at ${viewport.width}px: page is ${wide}px wider than the screen`);
     await v.close();
   }
 });
