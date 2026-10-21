@@ -43,6 +43,12 @@ One page per TACO food the app ships (591), plus an index by category, for peopl
 - Names read as people say them (`plain()` in the builder); the few the rule can't fix are named by hand in `SAID`. An address never changes food: a name clash stops the build.
 - Where the table marks a macro "NA" (oils, spirits), the page shows 0 like the app, with a note saying so.
 
+## Calorie calculator (/calculadora/)
+
+A free calculator for a daily calorie and macro target, in Portuguese and English (`?lang=en`), ending with the waitlist box tagged `seo-calc`. `assets/calculator.js` holds the Kilo app's goal maths (`target-calculator.ts` in the app repo), with the pace the app uses when none is picked (lose 0.5 kg a week, gain 0.25); the app's onboarding dial can start a little faster for small bodies, so the page says it uses the default pace, and the app's own warning words (`target-rules.ts`). It runs in the browser only: the number boxes have no names and the form never submits.
+
+`data/goal-samples.json` holds the app's answers for 684 sample people, written by `node --experimental-strip-types tools/make-goal-samples.mjs /path/to/fitness-app`. The check compares the site's answers with them, so when the app's goal maths changes, rerun that and fix `assets/calculator.js` until the check passes.
+
 ## Checking the site
 
 ```sh

@@ -16,6 +16,18 @@
   <url>
     <loc>https://kiloapp.com.br/lista/privacidade/</loc>
   </url>
+  <url>
+    <loc>https://kiloapp.com.br/calculadora/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://kiloapp.com.br/calculadora/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kiloapp.com.br/calculadora/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kiloapp.com.br/calculadora/"/>
+  </url>
+  <url>
+    <loc>https://kiloapp.com.br/calculadora/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://kiloapp.com.br/calculadora/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kiloapp.com.br/calculadora/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kiloapp.com.br/calculadora/"/>
+  </url>
   <!-- alimentos: written by tools/build-food-pages.mjs -->
   <url><loc>https://kiloapp.com.br/alimentos/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/arroz-integral-cozido/</loc></url>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Calculadora de calorias e macros grátis · Kilo</title>
+<meta name="description" content="Calcule quantas calorias e quanto de proteína, carboidrato e gordura comer por dia para perder, manter ou ganhar peso. Grátis, com a mesma conta do app Kilo.">
+<!-- No canonical here: calculator.js adds it for the language shown (Google asks that JavaScript never change one in the HTML). -->
+<link rel="alternate" hreflang="pt-BR" href="https://kiloapp.com.br/calculadora/">
+<link rel="alternate" hreflang="en" href="https://kiloapp.com.br/calculadora/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://kiloapp.com.br/calculadora/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kilo">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://kiloapp.com.br/calculadora/">
+<meta property="og:title" content="Calculadora de calorias e macros grátis · Kilo">
+<meta property="og:description" content="Calcule quantas calorias e quanto de proteína, carboidrato e gordura comer por dia para perder, manter ou ganhar peso. Grátis, com a mesma conta do app Kilo.">
+<meta property="og:image" content="https://kiloapp.com.br/assets/img/compartilhar.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/assets/pages.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="brand" href="/"><span class="mark" aria-hidden="true">K</span>Kilo</a><button type="button" class="lang" id="lang-toggle" lang="en" hidden>English</button></header>
+  <nav class="crumbs" aria-label="Você está em" data-t-aria="crumbsLabel"><ol><li><a href="/" data-t="home">Kilo</a></li><li><span aria-current="page" data-t="here">Calculadora</span></li></ol></nav>
+  <main>
+  <h1 data-t="title">Calculadora de calorias e macros</h1>
+  <p class="sub" data-t="lede">Descubra quantas calorias comer por dia para perder, manter ou ganhar peso, e quanto disso em proteína, carboidrato e gordura. É a conta que o app Kilo usa para montar a sua meta, com o ritmo padrão: perder até 0,5 kg ou ganhar cerca de 0,25 kg por semana.</p>
+
+  <p class="needs-js facts">A calculadora precisa de JavaScript ligado no navegador. The calculator needs JavaScript turned on.</p>
+  <form id="calc" class="facts calc" novalidate hidden>
+    <fieldset data-group="goal">
+      <legend data-t="goalLegend">Seu objetivo</legend>
+      <div class="choices">
+        <label><input type="radio" name="goal" value="lose"> <span data-t="goalLose">Perder peso</span></label>
+        <label><input type="radio" name="goal" value="maintain"> <span data-t="goalMaintain">Manter o peso</span></label>
+        <label><input type="radio" name="goal" value="gain"> <span data-t="goalGain">Ganhar peso</span></label>
+      </div>
+    </fieldset>
+    <fieldset data-group="sex">
+      <legend data-t="sexLegend">Sexo</legend>
+      <div class="choices">
+        <label><input type="radio" name="sex" value="male"> <span data-t="sexMale">Masculino</span></label>
+        <label><input type="radio" name="sex" value="female"> <span data-t="sexFemale">Feminino</span></label>
+        <label><input type="radio" name="sex" value="unspecified"> <span data-t="sexUnspecified">Prefiro não dizer</span></label>
+      </div>
+    </fieldset>
+    <div class="numbers">
+      <p><label for="age" data-t="ageLabel">Idade (anos)</label><input id="age" inputmode="numeric" autocomplete="off" maxlength="3"></p>
+      <p><label for="height" data-t="heightLabel">Altura (cm)</label><input id="height" inputmode="decimal" autocomplete="off" maxlength="6" aria-describedby="height-hint"><span class="hint" id="height-hint" data-t="heightHint">Em centímetros, como 170, ou em metros, como 1,70.</span></p>
+      <p><label for="weight" data-t="weightLabel">Peso (kg)</label><input id="weight" inputmode="decimal" autocomplete="off" maxlength="6"></p>
+    </div>
+    <fieldset data-group="activity" aria-describedby="activity-hint">
+      <legend data-t="activityLegend">Como é o seu dia</legend>
+      <p class="hint" id="activity-hint" data-t="activityHint">Treina pesado quase todo dia? Escolha um nível acima.</p>
+      <div class="choices stack">
+        <label><input type="radio" name="activity" value="sitting"> <span data-t="activitySitting">Maior parte do tempo sentado</span></label>
+        <label><input type="radio" name="activity" value="light"> <span data-t="activityLight">Em pé durante parte do dia</span></label>
+        <label><input type="radio" name="activity" value="active"> <span data-t="activityActive">Em pé durante a maior parte do dia</span></label>
+        <label><input type="radio" name="activity" value="very"> <span data-t="activityVery">Trabalho braçal</span></label>
+      </div>
+    </fieldset>
+    <p class="status" role="alert"></p>
+    <button type="submit" class="cta" data-t="calculate">Calcular</button>
+    <p class="hint" data-t="privacyNote">A conta é feita no seu aparelho. Nada do que você digita é enviado.</p>
+  </form>
+
+  <section id="result" class="facts result" tabindex="-1" aria-labelledby="result-title" hidden>
+    <h2 id="result-title" data-t="resultTitle">Sua meta diária</h2>
+    <div class="figures">
+      <p class="kcal"><strong data-kcal></strong> <span data-t="perDay">kcal por dia</span></p>
+      <table class="macros">
+        <tr><th scope="row" data-t="protein">Proteína</th><td data-protein></td></tr>
+        <tr><th scope="row" data-t="carbs">Carboidrato</th><td data-carbs></td></tr>
+        <tr><th scope="row" data-t="fat">Gordura</th><td data-fat></td></tr>
+      </table>
+      <p class="pace"></p>
+    </div>
+    <p class="burn"></p>
+    <ul class="notes" hidden></ul>
+    <p class="hint" data-t="estimate">Uma estimativa inicial. O peso de cada pessoa responde de um jeito, então vale acompanhar e ajustar.</p>
+  </section>
+
+  <section class="join-card" aria-labelledby="join-title">
+    <h2 id="join-title" data-t="joinTitle">O Kilo sugere ajustes pelo seu progresso real</h2>
+    <p data-t="joinText">No app, a meta começa com esta conta. Toda semana, o check-in mostra como foi e sugere um ajuste na sua meta. Você decide se aceita.</p>
+    <a class="cta" href="/?origem=seo-calc" data-join-link data-t="joinButton">Entrar na lista de espera</a>
+    <p class="small" data-t="joinSmall">Grátis, sem anúncios. Primeiro no iPhone.</p>
+  </section>
+
+  <section class="more" aria-labelledby="how-title">
+    <h2 id="how-title" data-t="howTitle">Como a conta funciona</h2>
+    <p data-t="how1">O gasto em repouso vem da fórmula de Mifflin-St Jeor, com seu peso, altura, idade e sexo. Em “Prefiro não dizer”, a conta usa a média entre as versões masculina e feminina.</p>
+    <p data-t="how2">O gasto do dia é o gasto em repouso vezes o seu nível de atividade: 1,2 (sentado), 1,375 (em pé parte do dia), 1,55 (em pé a maior parte do dia) ou 1,725 (trabalho braçal).</p>
+    <p data-t="how3">Para perder peso, a meta tira até 0,5 kg por semana (cerca de 7.700 kcal por quilo), mas nunca mais de 25% do seu gasto, nunca menos de 1.200 kcal (feminino), 1.500 kcal (masculino) ou 1.350 kcal (prefiro não dizer), a não ser que o seu gasto seja menor, e nunca menos que o seu gasto em repouso. Para ganhar, soma cerca de 0,25 kg por semana. Um número fora da faixa de 1.200 a 5.000 kcal não é sugerido.</p>
+    <p data-t="how4">Proteína: 1,8 g por kg para perder e 1,6 g por kg para manter ou ganhar (acima de IMC 30, pelo peso de IMC 25), até 35% das calorias. Gordura: o maior entre 0,7 g por kg e 25% das calorias. Carboidrato: o que sobra.</p>
+    <p data-t="how5">Até 17 anos, a meta fica na manutenção. Abaixo de 16 anos, não há meta.</p>
+  </section>
+  </main>
+  <footer>
+    <a href="/" data-t="footHome">Página inicial do Kilo</a>
+    <a href="/alimentos/" data-t="footFoods">Calorias dos alimentos</a>
+    <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a>
+    <p class="note" data-t="disclaimer">O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.</p>
+  </footer>
+</div>
+<script src="/assets/calculator.js"></script>
+</body>
+</html>

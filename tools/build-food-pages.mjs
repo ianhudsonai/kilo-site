@@ -104,6 +104,7 @@ const joinCard = lead => `  <section class="join-card" aria-labelledby="join-tit
 const footer = `  <footer>
     <a href="/">Página inicial do Kilo</a>
     <a href="/${DIR}/">Todos os alimentos</a>
+    <a href="/calculadora/">Calculadora de calorias</a>
     <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a>
     <p class="note">O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.</p>
   </footer>
