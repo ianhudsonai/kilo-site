@@ -10,7 +10,7 @@
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow-x: hidden; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 img { max-width: 100%; display: block; }
 a { color: var(--link); font-weight: 600; }
 [hidden] { display: none !important; }
@@ -24,10 +24,10 @@ a { color: var(--link); font-weight: 600; }
 .lang { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; padding: 6px 14px; cursor: pointer; }
 
 /* Hero */
-.hero { display: grid; gap: 28px; padding: 8px 0 48px; }
+.hero { display: grid; gap: 24px; padding: 4px 0 48px; }
 .eyebrow { display: inline-block; margin: 0 0 14px; padding: 5px 12px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.01em; }
 h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 850; margin: 0 0 14px; }
-.lede { font-size: 1.12rem; color: var(--muted); margin: 0 0 20px; max-width: 34em; }
+.lede { font-size: 1.12rem; color: var(--muted); margin: 0 0 18px; max-width: 34em; }
 .lede strong { color: var(--text); }
 
 /* The phone: a frame we draw, holding a real Kilo screenshot. */
@@ -36,12 +36,14 @@ h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1.02; letter-spacing:
 .phone::before { content: ""; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 30%; height: 22px; border-radius: 999px; background: #111312; z-index: 1; }
 .phone .screen { width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #F2F2F5; padding-top: 13%; }
 .phone img { width: 100%; height: auto; }
+/* On phones the phone sits under the form, so its screen starts scrolled a little: the "Aceitar sugestão" button shows without scrolling the page. */
+@media (max-width: 899px) { .phone img { margin-top: -26%; } }
 
 /* The waitlist form, used in the hero and the closing block. */
 .join-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; max-width: 460px; }
 .join-box label { display: block; font-weight: 700; margin-bottom: 8px; }
 .join-box input[type=email] { width: 100%; font: inherit; font-size: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); }
-.join-box input[type=email]:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+.join-box input[type=email]:focus { outline: 3px solid var(--link); outline-offset: 1px; }
 button.join { width: 100%; margin-top: 12px; font: inherit; font-weight: 800; font-size: 18px; padding: 15px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
 button.join:disabled { opacity: 0.6; cursor: default; }
 .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -56,7 +58,7 @@ button.join:disabled { opacity: 0.6; cursor: default; }
 /* Closing block */
 .closing { background: var(--ink); color: var(--on-ink); border-radius: 28px; padding: 32px 20px; margin: 24px 0 40px; display: grid; gap: 20px; }
 .closing h2 { font-size: clamp(1.8rem, 7vw, 3rem); line-height: 1.05; letter-spacing: -0.03em; margin: 0; }
-.closing p { margin: 12px 0 0; opacity: 0.85; }
+.closing-text p { margin: 12px 0 0; opacity: 0.85; }
 .closing .join-box { color: var(--text); }
 
 footer { padding: 8px 0 40px; font-size: 0.88rem; color: var(--muted); }

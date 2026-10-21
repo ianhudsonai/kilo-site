@@ -103,10 +103,33 @@ await check('main page shows the headline, the phone and the email box in the fi
   expect((await h1.innerText()).includes('O app de treino e dieta que aprende com você'), `headline reads "${await h1.innerText()}"`);
   expect(await inFirstScreen(h1, v.page), 'headline is below the first screen');
   expect(await inFirstScreen(v.page.locator('form.join-form').first().getByLabel(/e-mail/i), v.page), 'email box is below the first screen');
-  expect(await inFirstScreen(v.page.getByRole('img', { name: /Aceitar sugestão/ }), v.page), 'phone screenshot is below the first screen');
+  // The "Aceitar sugestão" button sits 36% of the way down the screenshot; that row, not just the phone's top edge, must show.
+  const shot = await v.page.getByRole('img', { name: /Aceitar sugestão/ }).boundingBox();
+  const buttonRow = shot && shot.y + shot.height * 0.36;
+  expect(buttonRow && buttonRow < PHONE.height, `the Aceitar sugestão row in the screenshot is at ${Math.round(buttonRow)}px, below the first screen`);
   expect((await v.page.locator('form.join-form').count()) === 2, 'expected an email box in the hero and one in the closing block');
   expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
   await v.close();
+});
+
+// The database records that people agreed to exactly this wording (consent version 2026-10-20), so it must never drift.
+const CONSENT = {
+  pt: { consent: 'Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.', button: 'Entrar na lista de espera' },
+  en: { consent: 'We will only email you about the Kilo launch. You can leave the list at any time.', button: 'Join the waitlist' },
+};
+
+await check('both boxes show the recorded consent wording and button label, in Portuguese and English', async () => {
+  for (const lang of ['pt', 'en']) {
+    const v = await visitor();
+    await v.page.goto(base + (lang === 'en' ? '/?lang=en' : '/'));
+    for (let i = 0; i < 2; i++) {
+      const form = v.page.locator('form.join-form').nth(i);
+      const consent = (await form.locator('.consent').innerText()).replace(/\s+/g, ' ');
+      expect(consent.startsWith(CONSENT[lang].consent), `${lang} box ${i + 1} consent reads "${consent}"`);
+      expect((await form.locator('button.join').innerText()).trim() === CONSENT[lang].button, `${lang} box ${i + 1} button reads "${await form.locator('button.join').innerText()}"`);
+    }
+    await v.close();
+  }
 });
 
 await check('joining from the hero box sends the email, no tag and Portuguese, and says Pronto', async () => {
@@ -188,6 +211,15 @@ await check('?lang=en and the English switch show the page in English, and a joi
   await w.page.goto(base + '/');
   await w.page.getByRole('button', { name: 'English' }).click();
   expect((await w.page.getByRole('heading', { level: 1 }).innerText()).includes('learns from you'), 'switch did not change the headline');
+  for (const text of ['Be one of the first to use Kilo.', 'Waitlist privacy', 'Your email']) {
+    expect((await w.page.getByText(text, { exact: true }).count()) > 0, `"${text}" missing after switching to English`);
+  }
+  await w.page.getByRole('button', { name: 'Português' }).click();
+  // An error on screen is translated, not dropped, when the language changes.
+  await join(w.page, 'ana@exemplo');
+  await w.page.getByText('Confira o e-mail. Parece que falta alguma coisa.').first().waitFor();
+  await w.page.getByRole('button', { name: 'English' }).click();
+  await w.page.getByText('Check the email. It looks like something is missing.').first().waitFor();
   await w.page.getByRole('button', { name: 'Português' }).click();
   expect((await w.page.getByRole('heading', { level: 1 }).innerText()).includes('aprende com você'), 'switch did not change back');
   await w.close();

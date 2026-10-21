@@ -6,10 +6,10 @@
   var TEXT = {
     pt: {
       docTitle: 'Kilo: o app de treino e dieta que aprende com você',
-      docDescription: 'O Kilo sugere a carga da próxima série e ajusta sua meta pelo seu progresso real. Treino e dieta no mesmo app, grátis e sem anúncios. Em breve no iPhone: entre na lista de espera.',
+      docDescription: 'O Kilo sugere a carga da próxima série e, toda semana, um ajuste na sua meta pelo seu progresso real. Treino e dieta no mesmo app, grátis e sem anúncios. Em breve no iPhone: entre na lista de espera.',
       eyebrow: 'Em breve no iPhone · Grátis',
       headline: 'O app de treino e dieta que aprende com você.',
-      lede: 'O Kilo sugere a carga da próxima série e ajusta sua meta pelo seu progresso real. Você só aceita.',
+      lede: 'O Kilo sugere a carga da próxima série e, toda semana, um ajuste na sua meta pelo seu progresso real. Você só aceita.',
       phoneAlt: 'Tela de treino do Kilo: o supino da última vez, 3 séries de 60 kg, e o botão Aceitar sugestão',
       emailLabel: 'Seu e-mail',
       placeholder: 'voce@exemplo.com',
@@ -30,10 +30,10 @@
     },
     en: {
       docTitle: 'Kilo: the workout and diet app that learns from you',
-      docDescription: 'Kilo suggests the weight for your next set and adjusts your target to your real progress. Workouts and diet in one app, free with no ads. Coming soon to iPhone: join the waitlist.',
+      docDescription: 'Kilo suggests the weight for your next set and, every week, a change to your target based on your real progress. Workouts and diet in one app, free with no ads. Coming soon to iPhone: join the waitlist.',
       eyebrow: 'Coming soon to iPhone · Free',
       headline: 'The workout and diet app that learns from you.',
-      lede: 'Kilo suggests the weight for your next set and adjusts your target to your real progress. You just accept.',
+      lede: 'Kilo suggests the weight for your next set and, every week, a change to your target based on your real progress. You just accept.',
       phoneAlt: 'Kilo workout screen: last time\'s bench press, 3 sets of 60 kg, and the Aceitar sugestão (Accept suggestion) button',
       emailLabel: 'Your email',
       placeholder: 'you@example.com',
@@ -77,7 +77,7 @@
     toggle.lang = t.toggleLang;
     boxes.forEach(function (box) {
       box.querySelector('button.join').textContent = box === sendingBox ? t.sending : t.button;
-      clearError(box);
+      if (box.dataset.error) showError(box, box.dataset.error);
     });
   }
 
@@ -85,6 +85,7 @@
     var status = box.querySelector('.status');
     status.textContent = '';
     status.className = 'status';
+    delete box.dataset.error;
     box.querySelector('input[type=email]').removeAttribute('aria-invalid');
   }
 
@@ -92,6 +93,7 @@
     var status = box.querySelector('.status');
     status.textContent = TEXT[lang][key];
     status.className = 'status error';
+    box.dataset.error = key;
     if (key === 'invalid') box.querySelector('input[type=email]').setAttribute('aria-invalid', 'true');
   }
 
@@ -131,7 +133,7 @@
       fetch(config.url + '/rest/v1/rpc/join_waitlist', {
         method: 'POST',
         headers: { 'content-type': 'application/json', apikey: config.key },
-        body: JSON.stringify({ p_email: value, p_origem: origem, p_lang: lang, p_website: box.querySelector('input[name=website]').value })
+        body: JSON.stringify({ p_email: value, p_origem: origem, p_lang: lang, p_website: box.querySelector('.trap input').value })
       }).then(function (response) {
         return response.json().catch(function () { return {}; }).then(function (body) { return { ok: response.ok, body: body }; });
       }).then(function (result) {
