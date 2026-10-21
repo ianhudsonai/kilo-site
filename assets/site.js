@@ -299,20 +299,26 @@
   var cardClosed = false, cardDue = false;
   // The tags the short links use; each has its QR code in assets/qr (made by tools/make-qr.py).
   var QR_TAGS = ['ig-kiloapp', 'ig-elas', 'ig-treino', 'tt-kiloapp', 'tt-elas', 'tt-treino', 'ig-ian'];
-  card.querySelector('img').src = '/assets/qr/' + (QR_TAGS.indexOf(origem) >= 0 ? origem : 'kilo') + '.svg';
+  var qr = card.querySelector('img');
 
-  function onScreen(el) { var r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; }
+  // `below` counts a box as on screen that far before it scrolls in, so the bar is gone by the time the box arrives.
+  function onScreen(el, below) { var r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight + (below || 0); }
   function overlaps(a, b) { return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom; }
 
   function placeExtras() {
-    var showBar = phoneWidth.matches && !joined && heroBox.getBoundingClientRect().bottom < 0 && !onScreen(heroBox) && !onScreen(endBox);
+    var showBar = phoneWidth.matches && !joined && heroBox.getBoundingClientRect().bottom < 0 && !onScreen(heroBox) && !onScreen(endBox, bar.offsetHeight + 40);
     bar.classList.toggle('show', showBar);
+    // While the bar is up, keyboard focus scrolls things clear of it.
+    document.documentElement.classList.toggle('bar-up', showBar);
     if (card.hidden) return;
     // Where the card sits when shown (bottom right), whether or not it is showing now.
     var home = { right: window.innerWidth - 20, bottom: window.innerHeight - 20 };
     home.left = home.right - card.offsetWidth; home.top = home.bottom - card.offsetHeight;
     var clear = boxes.every(function (box) { return !overlaps(home, box.getBoundingClientRect()); });
-    card.classList.toggle('show', cardDue && !cardClosed && !joined && !phoneWidth.matches && clear);
+    var showCard = cardDue && !cardClosed && !joined && !phoneWidth.matches && clear;
+    // The code loads only when the card first shows, so phones never fetch it.
+    if (showCard && !qr.getAttribute('src')) qr.src = '/assets/qr/' + (QR_TAGS.indexOf(origem) >= 0 ? origem : 'kilo') + '.svg';
+    card.classList.toggle('show', showCard);
   }
 
   var queued = false;
@@ -324,7 +330,12 @@
     endBox.querySelector('input[type=email]').focus({ preventScroll: true });
     endBox.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
   });
-  card.querySelector('.qr-close').addEventListener('click', function () { cardClosed = true; placeExtras(); });
+  card.querySelector('.qr-close').addEventListener('click', function () {
+    cardClosed = true;
+    placeExtras();
+    // The button just vanished: hand focus back to the page so keyboard users carry on from the top of the content.
+    document.querySelector('main').focus({ preventScroll: true });
+  });
   card.hidden = false;
   setTimeout(function () { cardDue = true; placeExtras(); }, still ? 0 : 1200);
   placeExtras();

@@ -53,8 +53,8 @@ const results = [];
  * A fresh visitor: phone-sized unless told otherwise, with the waitlist faked. `reply` is what the join call answers;
  * `sent` collects every join call's body and `leaks` every request that tried to leave localhost.
  */
-async function visitor({ viewport = PHONE, reply = { ok: true }, reducedMotion = 'no-preference', colorScheme = 'light' } = {}) {
-  const context = await browser.newContext({ viewport, reducedMotion, colorScheme, serviceWorkers: 'block' });
+async function visitor({ viewport = PHONE, reply = { ok: true }, reducedMotion = 'no-preference', colorScheme = 'light', javaScriptEnabled = true } = {}) {
+  const context = await browser.newContext({ viewport, reducedMotion, colorScheme, javaScriptEnabled, serviceWorkers: 'block' });
   const sent = [], leaks = [];
   await context.route('**/*', route => {
     const url = route.request().url();
@@ -284,16 +284,18 @@ await check('every text and image description shows its own words in Portuguese 
   const read = () => v.page.evaluate(() => ({
     texts: [...document.querySelectorAll('[data-t]')].map(el => [el.getAttribute('data-t'), el.textContent]),
     alts: [...document.querySelectorAll('[data-t-alt]')].map(el => [el.getAttribute('data-t-alt'), el.getAttribute('alt')]),
+    labels: [...document.querySelectorAll('[data-t-aria]')].map(el => [el.getAttribute('data-t-aria'), el.getAttribute('aria-label')]),
   }));
   const seen = {};
   for (const lang of ['pt', 'en']) {
     if (lang === 'en') await v.page.getByRole('button', { name: 'English' }).click();
-    const { texts, alts } = await read();
-    for (const [key, text] of [...texts, ...alts]) {
+    const { texts, alts, labels } = await read();
+    expect(labels.length > 0, 'no translated button labels found');
+    for (const [key, text] of [...texts, ...alts, ...labels]) {
       expect(typeof TEXT[lang][key] === 'string' && TEXT[lang][key].trim() !== '', `${lang} has no words for "${key}"`);
       expect(text === TEXT[lang][key], `${lang} "${key}" shows "${text}"`);
     }
-    seen[lang] = new Map([...texts, ...alts]);
+    seen[lang] = new Map([...texts, ...alts, ...labels]);
   }
   const untranslated = [...seen.pt].filter(([key, text]) => seen.en.get(key) === text).map(([key]) => key);
   expect(untranslated.length === 0, `same words in both languages: ${untranslated.join(', ')}`);
@@ -440,6 +442,23 @@ await check('on a phone, the join bar shows once the hero email box is gone and 
   await bar.waitFor({ state: 'visible', timeout: TIMEOUT }).catch(() => { throw new Error('no join bar after scrolling past the hero'); });
   await v.page.locator('#email-end').evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await bar.waitFor({ state: 'hidden', timeout: TIMEOUT }).catch(() => { throw new Error('the join bar stays over the closing email box'); });
+  // It starts leaving a bar's height before the closing box arrives, so it is gone by the time the box is under it.
+  await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  await bar.waitFor({ state: 'visible', timeout: TIMEOUT });
+  await v.page.evaluate(() => { const box = document.querySelector('#email-end').closest('[data-join]'); window.scrollBy({ top: box.getBoundingClientRect().top - innerHeight - 20, behavior: 'instant' }); });
+  await v.page.waitForFunction(() => !document.querySelector('.join-bar').classList.contains('show'), null, { timeout: TIMEOUT })
+    .catch(() => { throw new Error('the join bar is still coming up as the closing box arrives under it'); });
+  // Keyboard focus never lands under the bar.
+  await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  await bar.waitFor({ state: 'visible', timeout: TIMEOUT });
+  await v.page.evaluate(() => {
+    const summary = document.querySelector('#perguntas summary');
+    window.scrollBy({ top: summary.getBoundingClientRect().top - innerHeight + 30, behavior: 'instant' });
+    summary.focus();
+  });
+  await v.page.waitForTimeout(900); // the questions' section finishes sliding in
+  const hidden = await v.page.evaluate(() => document.querySelector('#perguntas summary').getBoundingClientRect().bottom - document.querySelector('.join-bar').getBoundingClientRect().top);
+  expect(hidden <= 0, `a focused question sits ${hidden}px under the join bar`);
   await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
   await bar.getByRole('button').click();
   await v.page.waitForFunction(() => document.activeElement && document.activeElement.id === 'email-end', null, { timeout: TIMEOUT })
@@ -467,8 +486,10 @@ await check('on a computer, the QR card slides in with the page tag, never cover
   }
   await v.page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await card.waitFor({ state: 'visible', timeout: TIMEOUT });
-  await card.getByRole('button', { name: 'Fechar' }).click();
+  await card.getByRole('button', { name: 'Fechar' }).focus();
+  await v.page.keyboard.press('Enter');
   await card.waitFor({ state: 'hidden', timeout: TIMEOUT }).catch(() => { throw new Error('the QR card does not close'); });
+  expect(await v.page.evaluate(() => document.activeElement !== document.body && document.activeElement !== null), 'closing the QR card drops keyboard focus');
   await v.close();
   const phone = await visitor();
   await phone.page.goto(base + '/');
@@ -493,6 +514,36 @@ await check('with reduce motion on, the phone faces the visitor and nothing spin
   await bar.waitFor({ state: 'visible', timeout: TIMEOUT });
   expect((await bar.evaluate(el => getComputedStyle(el).transitionDuration)).split(',').every(d => parseFloat(d) === 0), 'the join bar still slides');
   await v.close();
+});
+
+await check('every short-link tag has its QR code and is in the page\'s QR list', async () => {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
+  const listed = JSON.parse(js.match(/var QR_TAGS = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+  for (const tag of [...Object.values(SHORT_LINKS), 'kilo']) {
+    expect(fs.existsSync(path.join(ROOT, 'assets/qr', tag + '.svg')), `no assets/qr/${tag}.svg (run tools/make-qr.py)`);
+  }
+  const tags = Object.values(SHORT_LINKS);
+  expect(listed.length === tags.length && tags.every(tag => listed.includes(tag)), `QR_TAGS ${listed} differs from the short links ${tags}`);
+});
+
+await check('printed, and without JavaScript, the whole page shows and the phone faces the visitor', async () => {
+  const v = await visitor({ viewport: { width: 1280, height: 800 } });
+  await v.page.goto(base + '/');
+  await v.page.waitForTimeout(600);
+  await v.page.emulateMedia({ media: 'print' });
+  const faint = await v.page.evaluate(() => [...document.querySelectorAll('main > section')].filter(el => getComputedStyle(el).opacity !== '1').map(el => el.id));
+  expect(faint.length === 0, `printing leaves these sections blank: ${faint.join(', ')}`);
+  await v.close();
+  const off = await visitor({ javaScriptEnabled: false });
+  await off.page.goto(base + '/');
+  const state = await off.page.evaluate(() => ({
+    turn: getComputedStyle(document.querySelector('.phone-turn')).transform,
+    faint: [...document.querySelectorAll('main > section')].filter(el => getComputedStyle(el).opacity !== '1').length,
+    card: getComputedStyle(document.querySelector('.qr-card')).display,
+    bar: getComputedStyle(document.querySelector('.join-bar')).visibility,
+  }));
+  expect(state.turn === 'none' && state.faint === 0 && state.card === 'none' && state.bar === 'hidden', `without JavaScript: ${JSON.stringify(state)}`);
+  await off.close();
 });
 
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
