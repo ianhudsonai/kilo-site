@@ -114,6 +114,14 @@ button.join:disabled { opacity: 0.6; cursor: default; }
 .extras svg { width: 26px; height: 26px; fill: none; stroke: var(--text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 10px; }
 .promise p { max-width: 36em; font-size: 1.08rem; }
 .promise p + p { margin-top: 10px; color: var(--muted); }
+.price-list { list-style: none; margin: 0; padding: 0; max-width: 760px; border-top: 1px solid var(--line); }
+.price-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.price-list span { color: var(--muted); }
+.price-list strong { white-space: nowrap; font-size: 1.05rem; }
+.price-list li.kilo { border-bottom: 0; margin-top: 10px; padding: 16px 18px; border-radius: var(--radius); background: var(--accent); }
+.price-list li.kilo span, .price-list li.kilo strong { color: var(--on-accent); font-weight: 800; }
+.price-list li.kilo strong { font-size: 1.3rem; }
+.prices .note { margin-top: 14px; max-width: 46em; font-size: 0.88rem; color: var(--muted); }
 .faq { margin-top: 18px; border-top: 1px solid var(--line); max-width: 760px; }
 .faq details { border-bottom: 1px solid var(--line); }
 .faq summary { cursor: pointer; font-weight: 700; padding: 16px 30px 16px 0; list-style: none; position: relative; }

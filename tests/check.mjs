@@ -312,6 +312,31 @@ await check('the app screens below the hero show their top edge on a phone (only
   await v.close();
 });
 
+await check('the price block sits after the privacy promise, in both languages, with sources and no brand names', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const order = await v.page.evaluate(() => [...document.querySelectorAll('main > section')].map(el => el.id || el.className));
+  const at = order.indexOf('precos');
+  expect(at > 0 && order[at - 1] === 'privacidade', `sections run ${order.join(' > ')}`);
+  const block = v.page.locator('section#precos');
+  for (const [lang, title, free] of [['pt', 'Quanto custaria tudo isso?', 'R$ 0'], ['en', 'What would all this cost?', 'R$ 0']]) {
+    if (lang === 'en') await v.page.getByRole('button', { name: 'English' }).click();
+    await block.getByRole('heading', { level: 2, name: title }).waitFor();
+    expect((await block.locator('li').count()) === 4, `${lang}: expected 3 prices and Kilo`);
+    expect((await block.locator('li.kilo').innerText()).includes(free), `${lang}: Kilo's price is not ${free}`);
+  }
+  const text = await block.innerText();
+  const brands = ['MacroFactor', 'Fitbod', 'Liftoff', 'Tracked', 'MyFitnessPal', 'Cronoshare', 'Plusdin'].filter(name => text.toLowerCase().includes(name.toLowerCase()));
+  expect(brands.length === 0, `brand names on the page: ${brands.join(', ')}`);
+  // Every number on the block has its source and check date in the HTML comment beside it.
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const notes = html.slice(html.indexOf('<section class="band prices"'), html.indexOf('</section>', html.indexOf('<section class="band prices"')));
+  for (const source of ['apps.apple.com/br/app/fitbod', 'apps.apple.com/br/app/macrofactor', 'cronoshare.com.br', 'plusdin.com.br', 'checked 2026-10-21']) {
+    expect(notes.includes(source), `the price notes do not record ${source}`);
+  }
+  await v.close();
+});
+
 await check('the gorilla is in the hero, by the learn blocks and at the closing box, and each one moves', async () => {
   const v = await visitor();
   await v.page.goto(base + '/');
