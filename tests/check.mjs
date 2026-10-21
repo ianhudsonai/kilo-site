@@ -20,7 +20,7 @@ function loadPlaywright() {
   try { return require('playwright'); } catch { return require(path.join(execSync('npm root -g').toString().trim(), 'playwright')); }
 }
 
-const TYPES = { '.webm': 'video/webm', '.mp4': 'video/mp4', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain', '.json': 'application/json' };
+const TYPES = { '.webm': 'video/webm', '.mp4': 'video/mp4', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain', '.json': 'application/json', '.ico': 'image/x-icon' };
 
 /** GitHub Pages' rules that matter here: a folder serves its index.html, and a folder without a trailing slash redirects to one. */
 function serve() {
@@ -888,7 +888,7 @@ await check('each comparison page shows its check date and sources, has its own 
     expect(links.length > 0 && links.every(link => comment.includes(link)), `/comparar/${app}/ links a source the comment does not record`);
     expect(/O Kilo ainda não foi lançado/.test(html) && /não é afiliado, patrocinado nem endossado/.test(html), `/comparar/${app}/ must say Kilo is not out yet and is not linked to the other app`);
     expect(html.includes('href="/?origem=seo-compare"'), `/comparar/${app}/ lacks the seo-compare box`);
-    for (const [, link] of html.matchAll(/href="(\/[^"#?]+)"/g)) expect(link.startsWith('/assets/') || fs.existsSync(path.join(ROOT, link, 'index.html')), `/comparar/${app}/ links to missing ${link}`);
+    for (const [, link] of html.matchAll(/href="(\/[^"#?]+)"/g)) expect(link.startsWith('/assets/') || fs.existsSync(path.join(ROOT, link, path.extname(link) ? '' : 'index.html')), `/comparar/${app}/ links to missing ${link}`);
   }
   expect(/^[a-z0-9][a-z0-9-]{0,39}$/.test('seo-compare'), 'seo-compare is not a valid tag');
 });
