@@ -59,6 +59,8 @@ async function visitor({ viewport = PHONE, reply = { ok: true }, reducedMotion =
   await context.route('**/*', route => {
     const url = route.request().url();
     if (url.startsWith(base)) return route.continue();
+    // Umami's script gets an empty stand-in: the checks never count a visit on the real counter.
+    if (url === 'https://cloud.umami.is/script.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
     if (url === WAITLIST + 'join_waitlist') {
       sent.push(JSON.parse(route.request().postData() || '{}'));
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(typeof reply === 'function' ? reply() : reply) });
@@ -245,7 +247,7 @@ await check('?lang=en and the English switch show the page in English, and a joi
   await w.page.goto(base + '/');
   await w.page.getByRole('button', { name: 'English' }).click();
   expect((await w.page.getByRole('heading', { level: 1 }).innerText()).includes('learns from you'), 'switch did not change the headline');
-  for (const text of ['Be one of the first to use Kilo.', 'Waitlist privacy', 'Your email']) {
+  for (const text of ['Be one of the first to use Kilo.', 'Site and waitlist privacy', 'Your email']) {
     expect((await w.page.getByText(text, { exact: true }).count()) > 0, `"${text}" missing after switching to English`);
   }
   await w.page.getByRole('button', { name: 'Português' }).click();
@@ -294,7 +296,7 @@ await check('six extras, the privacy promise and the six-question FAQ are on the
   const v = await visitor();
   await v.page.goto(base + '/');
   expect((await v.page.locator('section#extras li').count()) === 6, `expected 6 extras, saw ${await v.page.locator('section#extras li').count()}`);
-  await v.page.getByRole('heading', { name: 'Sem anúncios, sem rastreamento' }).waitFor();
+  await v.page.getByRole('heading', { name: 'No app: sem anúncios, sem rastreamento' }).waitFor();
   const questions = v.page.locator('section#perguntas summary');
   expect((await questions.count()) === 6, `expected 6 questions, saw ${await questions.count()}`);
   const android = v.page.locator('section#perguntas details', { hasText: 'Tem para Android?' });
@@ -1024,6 +1026,161 @@ await check('the calculator fits a small phone in light and dark mode, and says 
   await n.page.goto(base + '/calculadora/');
   expect(await n.page.locator('.needs-js').isVisible() && await n.page.locator('#calc').isHidden(), 'without JavaScript the form shows or the reason does not');
   await n.close();
+});
+
+// The counter is on: site.js holds the two values from Kilo's Umami tracking code (ian's account, EU region). Every visitor
+// gets an empty stand-in for Umami's script (see visitor()), so the checks never reach Umami; withCounter() swaps in a fake.
+const COUNTER_ON = "var COUNTER = { src: 'https://cloud.umami.is/script.js', id: 'e87ebbf0-b53b-4acc-9c4f-4806fbc2c50a' };";
+// A stand-in for Umami's script that behaves like it where privacy is at stake: it sends a page view at load and on each
+// address change (with the address before it as referrer), passes every send through the page's before-send hook, and
+// records what would leave in window.sentPayloads (and the page's events in window.counted).
+const FAKE_UMAMI = `(function () {
+  var me = document.currentScript, hook = window[me.dataset.beforeSend], last = location.href;
+  window.sentPayloads = [];
+  function send(payload) { payload.website = me.dataset.websiteId; var kept = hook ? hook('event', payload) : payload; if (kept) window.sentPayloads.push(kept); }
+  send({ url: location.href, referrer: document.referrer, title: document.title });
+  ['pushState', 'replaceState'].forEach(function (name) {
+    var original = history[name];
+    history[name] = function () { original.apply(history, arguments); if (location.href !== last) { send({ url: location.href, referrer: last }); last = location.href; } };
+  });
+  window.umami = { track: function (name, data) {
+    (window.counted = window.counted || []).push([name, data || null]);
+    send({ url: location.href, referrer: document.referrer, name: name, data: data });
+  } };
+})();`;
+/** Serves `script` (the stand-in above, by default) as Umami's for this page. */
+async function withCounter(page, script = FAKE_UMAMI, delay = 0) {
+  await page.route('https://cloud.umami.is/script.js', async route => {
+    if (delay) await new Promise(done => setTimeout(done, delay));
+    return script === null ? route.abort() : route.fulfill({ contentType: 'text/javascript', body: script });
+  });
+}
+
+await check('the visitor counter is on, set to Kilo\'s Umami site, and loads once, from Umami only', async () => {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
+  expect(js.includes(COUNTER_ON), 'site.js does not hold Kilo\'s Umami tracking code');
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  await v.page.waitForTimeout(800);
+  const tags = await v.page.locator('script[data-website-id]').evaluateAll(els => els.map(el => el.src));
+  expect(tags.length === 1 && tags[0] === 'https://cloud.umami.is/script.js', `counter scripts: ${JSON.stringify(tags)}`);
+  expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
+  await v.close();
+});
+
+await check('when switched on, the counter loads cookie-free from Umami and counts taps, joins, scroll depth and the QR card', async () => {
+  const v = await visitor();
+  await withCounter(v.page);
+  await v.page.goto(base + '/?origem=ig-treino&t=segredo');
+  const tag = await v.page.locator('script[data-website-id]').evaluate(el => ({
+    src: el.src, id: el.dataset.websiteId, domains: el.dataset.domains, dnt: el.dataset.doNotTrack, before: el.dataset.beforeSend, defer: el.defer }));
+  expect(tag.src === 'https://cloud.umami.is/script.js' && tag.id === 'e87ebbf0-b53b-4acc-9c4f-4806fbc2c50a' && tag.domains === 'kiloapp.com.br' && tag.dnt === 'true' && tag.defer, `script tag ${JSON.stringify(tag)}`);
+  await v.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  await join(v.page, 'nao-conta@exemplo.com');
+  await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  await v.page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  await v.page.waitForFunction(() => (window.counted || []).filter(c => c[0] === 'rolagem').length === 4, null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`scroll depth: ${JSON.stringify(await v.page.evaluate(() => window.counted))}`); });
+  const counted = await v.page.evaluate(() => window.counted);
+  const has = (name, data) => counted.some(c => c[0] === name && JSON.stringify(c[1]) === JSON.stringify(data));
+  expect(has('entrar-na-lista', { lugar: 'topo' }) && has('entrou', { lugar: 'topo' }), `join not counted: ${JSON.stringify(counted)}`);
+  expect([25, 50, 75, 100].every(n => has('rolagem', { ate: n })), `scroll marks: ${JSON.stringify(counted)}`);
+  expect(!JSON.stringify(counted).includes('@'), 'an email reached the counter');
+  const cookies = await v.page.context().cookies();
+  expect(cookies.length === 0, `cookies set: ${cookies.map(c => c.name).join(', ')}`);
+  await v.close();
+  // The phone bar and the closing box.
+  const p = await visitor();
+  await withCounter(p.page);
+  await p.page.goto(base + '/');
+  await p.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  await p.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  await p.page.locator('.join-bar').getByRole('button').click();
+  await join(p.page, 'nao-conta@exemplo.com', 1);
+  await p.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  const phone = await p.page.evaluate(() => window.counted);
+  const phoneHas = (name, data) => phone.some(c => c[0] === name && JSON.stringify(c[1]) === JSON.stringify(data));
+  expect(phoneHas('entrar-na-lista', { lugar: 'barra' }) && phoneHas('entrar-na-lista', { lugar: 'fim' }) && phoneHas('entrou', { lugar: 'fim' }), `phone: ${JSON.stringify(phone)}`);
+  await p.close();
+  // The QR card on a computer.
+  const d = await visitor({ viewport: { width: 1440, height: 900 } });
+  await withCounter(d.page);
+  await d.page.goto(base + '/');
+  const card = d.page.locator('.qr-card');
+  await card.waitFor({ state: 'visible', timeout: TIMEOUT });
+  await card.getByRole('button', { name: 'Fechar' }).click();
+  await d.page.waitForFunction(() => (window.counted || []).some(c => c[0] === 'qr-fechado'), null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`QR card: ${JSON.stringify(await d.page.evaluate(() => window.counted))}`); });
+  expect(await d.page.evaluate(() => window.counted.filter(c => c[0] === 'qr-mostrado').length === 1), 'the QR card showing is not counted once');
+  await d.close();
+  // The card can show before Umami's script has loaded (at once with reduced motion): it is still counted, once.
+  const r = await visitor({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  await withCounter(r.page, FAKE_UMAMI, 1500);
+  await r.page.goto(base + '/');
+  await r.page.locator('.qr-card').waitFor({ state: 'visible', timeout: TIMEOUT });
+  await r.page.waitForFunction(() => (window.counted || []).some(c => c[0] === 'qr-mostrado'), null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`QR card before the counter loaded: ${JSON.stringify(await r.page.evaluate(() => window.counted))}`); });
+  await r.page.waitForTimeout(300);
+  expect(await r.page.evaluate(() => window.counted.filter(c => c[0] === 'qr-mostrado').length === 1), 'the early QR card is not counted once');
+  await r.close();
+});
+
+await check('the counter sends only the origem and lang tags of any address, never click ids, emails or the other site\'s path', async () => {
+  const v = await visitor();
+  await withCounter(v.page);
+  await v.page.goto(base + '/?origem=ig-treino&fbclid=clique123&utm_source=ig&email=ana%40exemplo.com', { referer: 'https://l.instagram.com/?u=perfil-secreto&e=xyz' });
+  await v.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  // The English switch changes the address, which Umami counts as a new page view with the old address as referrer.
+  await v.page.locator('#lang-toggle').click();
+  await v.page.locator('#lang-toggle').click();
+  await join(v.page, 'nao-conta@exemplo.com');
+  await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  const sent = await v.page.evaluate(() => window.sentPayloads);
+  const all = JSON.stringify(sent);
+  expect(sent.length >= 4, `sends: ${all}`);
+  for (const secret of ['clique123', 'fbclid', 'utm_', 'exemplo', '%40', '@', 'perfil-secreto', 'xyz']) expect(!all.includes(secret), `"${secret}" reached the counter: ${all}`);
+  expect(sent[0].url === base + '/?origem=ig-treino' && sent[0].referrer === 'https://l.instagram.com/', `first page view: ${JSON.stringify(sent[0])}`);
+  expect(sent.some(p => p.url === base + '/?origem=ig-treino&lang=en' && p.referrer === base + '/?origem=ig-treino'), `language switch: ${all}`);
+  await v.close();
+  // Only well-formed tags pass, and an app's address keeps its name.
+  const h = await visitor();
+  await withCounter(h.page);
+  await h.page.goto(base + '/');
+  await h.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  const cleaned = await h.page.evaluate(() => window.kiloCounterBeforeSend('event', {
+    url: location.origin + '/?origem=ana%40exemplo.com&lang=xx', referrer: 'android-app://com.google.android.gm/' }));
+  expect(cleaned.url === base + '/' && cleaned.referrer === 'android-app://com.google.android.gm/', `cleaned: ${JSON.stringify(cleaned)}`);
+  await h.close();
+  // A browser sending Global Privacy Control or Do Not Track never fetches Umami's script, so it is not counted at all.
+  for (const [name, key, value] of [['Global Privacy Control', 'globalPrivacyControl', true], ['Do Not Track', 'doNotTrack', '1']]) {
+    const g = await visitor();
+    await g.page.addInitScript(([key, value]) => Object.defineProperty(Navigator.prototype, key, { get: () => value }), [key, value]);
+    let fetched = false;
+    await g.page.route('https://cloud.umami.is/script.js', route => { fetched = true; return route.abort(); });
+    await g.page.goto(base + '/?origem=ig-treino');
+    await g.page.waitForTimeout(800);
+    expect(!fetched && (await g.page.locator('script[data-website-id]').count()) === 0, `a ${name} visit loaded the counter`);
+    await g.close();
+  }
+});
+
+await check('with the counter blocked or broken, the page and sign-up still work', async () => {
+  for (const script of [null, 'throw new Error("broken counter")', 'window.umami = { track: function () { throw new Error("broken track"); } };']) {
+    const v = await visitor();
+    const errors = [];
+    v.page.on('pageerror', e => errors.push(e.message));
+    await withCounter(v.page, script);
+    await v.page.goto(base + '/');
+    await v.page.waitForTimeout(500);
+    await join(v.page, 'ana@exemplo.com');
+    await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 })
+      .catch(() => { throw new Error(`sign-up fails with counter ${script === null ? 'blocked' : script}`); });
+    await v.page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    await v.page.waitForTimeout(300);
+    expect(errors.every(m => /broken counter/.test(m)), `page errors: ${errors.join('; ')}`);
+    expect(v.sent.length === 1, `join calls: ${v.sent.length}`);
+    await v.close();
+  }
 });
 
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {

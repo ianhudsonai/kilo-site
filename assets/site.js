@@ -17,7 +17,7 @@
       sending: 'Enviando…',
       consent: 'Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.',
       privacy: 'Privacidade',
-      privacyFooter: 'Privacidade da lista de espera', foodsFooter: 'Calorias dos alimentos', exercisesFooter: 'Como fazer os exercícios', calcFooter: 'Calculadora de calorias',
+      privacyFooter: 'Privacidade do site e da lista', foodsFooter: 'Calorias dos alimentos', exercisesFooter: 'Como fazer os exercícios', calcFooter: 'Calculadora de calorias',
       doneTitle: 'Pronto!',
       placeTitle: 'Você é o nº\u00a0{n} da fila',
       doneText: 'Você vai ser um dos primeiros a saber quando o Kilo chegar.',
@@ -52,7 +52,7 @@
       extraHealthTitle: 'App Saúde', extraHealth: 'Seus passos do dia vêm do app Saúde. O Kilo só lê, nunca grava nada nele.',
       extraDarkTitle: 'Modo escuro', extraDark: 'Claro ou escuro, como você preferir.',
       extraLangTitle: 'Português e inglês', extraLang: 'Nos dois idiomas, em quilos ou libras.',
-      promiseTitle: 'Sem anúncios, sem rastreamento',
+      promiseTitle: 'No app: sem anúncios, sem rastreamento',
       promise1: 'O app não tem anúncios, não faz análise de uso e não rastreia você.',
       promise2: 'Comece sem cadastro, como convidado. Se criar uma conta, você pode excluí-la com seus dados dentro do app, quando quiser.',
       pricesTitle: 'Quanto custaria tudo isso?',
@@ -68,7 +68,7 @@
       faq3Q: 'Tem para Android?', faq3A: 'Primeiro no iPhone. O Android vem depois: entre na lista e avisamos.',
       faq4Q: 'Preciso criar conta?', faq4A: 'Não. Você pode começar como convidado, sem cadastro.',
       faq5Q: 'Funciona sem internet?', faq5A: 'A busca de alimentos, sim: a tabela TACO e os alimentos dos EUA ficam dentro do app.',
-      faq6Q: 'O que vocês fazem com meus dados?', faq6A: 'No app, nada de anúncios, análise de uso ou rastreamento, e o Kilo só lê do app Saúde. Na lista de espera, usamos seu e-mail só para avisar do lançamento; os detalhes estão na página de privacidade da lista.',
+      faq6Q: 'O que vocês fazem com meus dados?', faq6A: 'No app, nada de anúncios, análise de uso ou rastreamento, e o Kilo só lê do app Saúde. Neste site, contamos as visitas sem cookies e sem saber quem é você. Na lista de espera, usamos seu e-mail só para avisar do lançamento. Os detalhes estão na página de privacidade.',
       gorillaWaveAlt: 'O gorila do Kilo dando oi',
       gorillaNotesAlt: 'O gorila do Kilo de olho no seu progresso',
       gorillaPointAlt: 'O gorila do Kilo convidando você para entrar na lista',
@@ -98,7 +98,7 @@
       sending: 'Sending…',
       consent: 'We will only email you about the Kilo launch. You can leave the list at any time.',
       privacy: 'Privacy',
-      privacyFooter: 'Waitlist privacy', foodsFooter: 'Food calories (in Portuguese)', exercisesFooter: 'Exercise how-tos (in Portuguese)', calcFooter: 'Calorie calculator',
+      privacyFooter: 'Site and waitlist privacy', foodsFooter: 'Food calories (in Portuguese)', exercisesFooter: 'Exercise how-tos (in Portuguese)', calcFooter: 'Calorie calculator',
       doneTitle: 'Done!',
       placeTitle: 'You\'re number\u00a0{n} in line',
       doneText: 'You will be one of the first to know when Kilo arrives.',
@@ -133,7 +133,7 @@
       extraHealthTitle: 'Apple Health', extraHealth: 'Your daily steps come from Apple Health. Kilo only reads; it never writes to it.',
       extraDarkTitle: 'Dark mode', extraDark: 'Light or dark, as you like.',
       extraLangTitle: 'English and Portuguese', extraLang: 'In both languages, in kilograms or pounds.',
-      promiseTitle: 'No ads, no tracking',
+      promiseTitle: 'In the app: no ads, no tracking',
       promise1: 'The app has no ads, no analytics and no tracking.',
       promise2: 'Start without signing up, as a guest. If you make an account, you can delete it and your data from inside the app, any time.',
       pricesTitle: 'What would all this cost?',
@@ -149,7 +149,7 @@
       faq3Q: 'Is it on Android?', faq3A: 'iPhone first. Android comes later: join the list and we will let you know.',
       faq4Q: 'Do I need an account?', faq4A: 'No. You can start as a guest, without signing up.',
       faq5Q: 'Does it work offline?', faq5A: 'Food search does: the Brazilian and US food tables are inside the app.',
-      faq6Q: 'What do you do with my data?', faq6A: 'In the app, no ads, no analytics and no tracking, and Kilo only reads from Apple Health. On the waitlist, we use your email only to tell you about the launch; the details are on the waitlist privacy page.',
+      faq6Q: 'What do you do with my data?', faq6A: 'In the app, no ads, no analytics and no tracking, and Kilo only reads from Apple Health. On this site, we count visits without cookies and without knowing who you are. On the waitlist, we use your email only to tell you about the launch. The details are on the privacy page.',
       gorillaWaveAlt: 'The Kilo gorilla saying hi',
       gorillaNotesAlt: 'The Kilo gorilla keeping an eye on your progress',
       gorillaPointAlt: 'The Kilo gorilla inviting you to join the list',
@@ -171,6 +171,56 @@
   var params = new URLSearchParams(location.search);
   // The tag in the link (?origem=ig-treino) says which account brought the person; the database keeps only well-formed tags.
   var origem = (params.get('origem') || '').trim().toLowerCase().slice(0, 40) || null;
+
+  // The visitor counter: Umami Cloud, cookie-free, data in its EU region (Frankfurt), described on the privacy page. src and id
+  // are the two values from Umami's tracking code; nothing loads while id is empty. It counts pages, where visits come from,
+  // scroll depth and taps on the join buttons, never an email, and only the origem and lang tags of the address. If it is
+  // blocked or broken, the page works the same.
+  var COUNTER = { src: 'https://cloud.umami.is/script.js', id: 'e87ebbf0-b53b-4acc-9c4f-4806fbc2c50a' };
+  // Every address Umami sends (the page and the one before it) keeps only its origem and lang tags, so ad click ids, utm
+  // tags or anything else in a link never reach it. Another site's address is cut down to the site's name. A browser asking
+  // not to be tracked (Do Not Track, handled by Umami, or Global Privacy Control) is not counted at all.
+  function counterAddress(address) {
+    if (!address) return '';
+    var url = new URL(address, location.origin);
+    // protocol + host, not origin: an app's address (android-app://com.google.android.gm/) has the origin "null".
+    if (url.origin !== location.origin) return url.protocol + '//' + url.host + '/';
+    // Only well-formed tags pass, so a link with an email or anything else in them sends nothing.
+    var kept = new URLSearchParams();
+    var tag = url.searchParams.get('origem');
+    if (tag && /^[a-z0-9-]{1,40}$/.test(tag)) kept.set('origem', tag);
+    if (url.searchParams.get('lang') === 'en') kept.set('lang', 'en');
+    var query = kept.toString();
+    return (/^[a-z][a-z0-9+.-]*:/i.test(address) ? url.origin : '') + url.pathname + (query ? '?' + query : '');
+  }
+  window.kiloCounterBeforeSend = function (type, payload) {
+    try {
+      if (navigator.globalPrivacyControl) return null;
+      payload.url = counterAddress(payload.url);
+      if ('referrer' in payload) payload.referrer = counterAddress(payload.referrer);
+    } catch (e) { return null; }
+    return payload;
+  };
+  // Asking not to be tracked also means Umami's script is never fetched.
+  var noTracking = navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1';
+  var waiting = []; // events from before Umami's script has loaded, sent once it has
+  if (COUNTER.src && COUNTER.id && !noTracking) {
+    var counter = document.createElement('script');
+    counter.defer = true;
+    counter.src = COUNTER.src;
+    counter.setAttribute('data-website-id', COUNTER.id);
+    counter.setAttribute('data-domains', 'kiloapp.com.br');
+    counter.setAttribute('data-do-not-track', 'true');
+    counter.setAttribute('data-before-send', 'kiloCounterBeforeSend');
+    counter.onload = function () { waiting.splice(0).forEach(function (event) { count(event[0], event[1]); }); };
+    document.head.appendChild(counter);
+  }
+  function count(name, data) {
+    try {
+      if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data);
+      else if (waiting.length < 20) waiting.push([name, data]);
+    } catch (e) { /* never in the way */ }
+  }
   var lang = params.get('lang') === 'en' ? 'en' : 'pt';
   var boxes = Array.prototype.slice.call(document.querySelectorAll('[data-join]'));
   var toggle = document.getElementById('lang-toggle');
@@ -276,8 +326,10 @@
     var form = box.querySelector('form');
     var email = box.querySelector('input[type=email]');
     var button = box.querySelector('button.join');
+    var where = box === boxes[0] ? 'topo' : 'fim';
     form.addEventListener('submit', function (event) {
       event.preventDefault();
+      count('entrar-na-lista', { lugar: where });
       if (sendingBox) return;
       var value = email.value.trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) || value.length > 254) { showError(box, 'invalid'); email.focus(); return; }
@@ -299,6 +351,7 @@
           var n = result.body.position;
           if (typeof n === 'number' && Number.isInteger(n) && n >= 1 && n < 1e9) { place = n; renderPlace(TEXT[lang]); }
           showDone(box);
+          count('entrou', { lugar: where });
           return;
         }
         var error = result.body && result.body.error;
@@ -339,7 +392,7 @@
   var card = document.querySelector('.qr-card');
   var heroBox = boxes[0], endBox = boxes[boxes.length - 1];
   var phoneWidth = window.matchMedia('(max-width: 899px)');
-  var cardClosed = false, cardDue = false;
+  var cardClosed = false, cardDue = false, cardCounted = false;
   // The tags the short links use; each has its QR code in assets/qr (made by tools/make-qr.py).
   var QR_TAGS = ['ig-kiloapp', 'ig-elas', 'ig-treino', 'tt-kiloapp', 'tt-elas', 'tt-treino', 'ig-ian'];
   var qr = card.querySelector('img');
@@ -361,19 +414,29 @@
     var showCard = cardDue && !cardClosed && !joined && !phoneWidth.matches && clear;
     // The code loads only when the card first shows, so phones never fetch it.
     if (showCard && !qr.getAttribute('src')) qr.src = '/assets/qr/' + (QR_TAGS.indexOf(origem) >= 0 ? origem : 'kilo') + '.svg';
+    if (showCard && !cardCounted) { cardCounted = true; count('qr-mostrado'); }
     card.classList.toggle('show', showCard);
   }
 
   var queued = false;
-  function queue() { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; placeExtras(); }); } }
+  // How far down the page the visitor got: 25, 50, 75 and 100%, each counted once.
+  var depths = [25, 50, 75, 100];
+  function countDepth() {
+    if (!window.umami) return; // marks wait until the counter is there (it never is while switched off or blocked)
+    var seen = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+    while (depths.length && seen >= depths[0] - 1) count('rolagem', { ate: depths.shift() });
+  }
+  function queue() { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; placeExtras(); countDepth(); }); } }
   window.addEventListener('scroll', queue, { passive: true });
   window.addEventListener('resize', queue);
 
   bar.querySelector('button').addEventListener('click', function () {
+    count('entrar-na-lista', { lugar: 'barra' });
     endBox.querySelector('input[type=email]').focus({ preventScroll: true });
     endBox.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
   });
   card.querySelector('.qr-close').addEventListener('click', function () {
+    count('qr-fechado');
     cardClosed = true;
     placeExtras();
     // The button just vanished: hand focus back to the page so keyboard users carry on from the top of the content.

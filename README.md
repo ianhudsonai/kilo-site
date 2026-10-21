@@ -67,6 +67,14 @@ A free calculator for a daily calorie and macro target, in Portuguese and Englis
 
 `data/goal-samples.json` holds the app's answers for 684 sample people, written by `node --experimental-strip-types tools/make-goal-samples.mjs /path/to/fitness-app`. The check compares the site's answers with them, so when the app's goal maths changes, rerun that and fix `assets/calculator.js` until the check passes.
 
+## Visitor counter
+
+`assets/site.js` loads Umami Cloud, a cookie-free counter with its data in the EU region (Frankfurt). It is on: `COUNTER` holds the `src` and `data-website-id` from the tracking code of Kilo's Umami site (ian's account). Emptying either value switches it off. Its section on the waitlist privacy page is the text ian approved; change the counter and that section together.
+
+It counts pages, sources (only the `origem` and `lang` parts of the page address and of the address before it; another site's address is cut to its name), scroll depth (`rolagem`), taps on the join buttons (`entrar-na-lista`), joins (`entrou`) and the QR card (`qr-mostrado`, `qr-fechado`). It never counts an email. Browsers sending Do Not Track or Global Privacy Control are not counted. The English switch changes the address, so Umami counts it as one more page view. If the counter is blocked or broken, the page works the same.
+
+The main page's promise heading ("No app: sem anúncios, sem rastreamento"), its data FAQ answer and its footer link mention the site's counting, and the privacy page has a section on it. Keep all of these in step with the counter.
+
 ## Checking the site
 
 ```sh
