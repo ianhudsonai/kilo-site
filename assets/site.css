@@ -42,10 +42,23 @@ h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1.02; letter-spacing:
 .phone, .phone-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 /* Its own layer and stacking context, so Safari hides the notch with the rest of the front face. */
 .phone-turn .phone { isolation: isolate; transform: rotateY(0deg); }
-.phone-back { position: absolute; inset: 0; border-radius: 44px; transform: rotateY(180deg); background: linear-gradient(150deg, #353a36, #151716 70%); box-shadow: var(--shadow); }
-.phone-back .cams { position: absolute; top: 4%; left: 7%; width: 40%; aspect-ratio: 1; border-radius: 24%; background: radial-gradient(circle at 30% 30%, #050606 0 17%, #3a3f3b 18% 21%, transparent 22%), radial-gradient(circle at 30% 72%, #050606 0 17%, #3a3f3b 18% 21%, transparent 22%), radial-gradient(circle at 72% 50%, #050606 0 17%, #3a3f3b 18% 21%, transparent 22%), #1d201e; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.1); }
-.phone-back .mark { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 28px; }
-.phone { position: relative; width: min(260px, 70vw); aspect-ratio: 390 / 844; border-radius: 44px; background: #111312; padding: 10px; box-shadow: var(--shadow); }
+/* The orange phone, drawn in CSS (no Apple photo or logo): an orange rim on the front; on the back a camera plateau with three
+   lenses, a lighter glass panel and the Kilo K pressed into it, tone on tone. */
+.phone-back { position: absolute; inset: 0; border-radius: 44px; transform: rotateY(180deg); background: linear-gradient(160deg, #F99B58, #EF7B33 45%, #D8621F); box-shadow: 0 0 0 3px #E5722C, var(--shadow); }
+.phone-back::before { content: ""; position: absolute; left: 4%; right: 4%; top: 33%; bottom: 2%; border-radius: 22px 22px 38px 38px; background: linear-gradient(170deg, #F68E4A, #E87230 60%, #DC6524); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.phone-back::after { content: ""; position: absolute; right: -6px; top: 22%; width: 3px; height: 9%; border-radius: 2px; background: #D9641F; box-shadow: 0 60px 0 #D9641F; }
+.phone-back .plateau { position: absolute; top: 2%; left: 4%; right: 4%; aspect-ratio: 1.75; border-radius: 38px 38px 20px 20px; background: linear-gradient(175deg, #F8954F, #EC7630); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 12px rgba(120, 45, 5, 0.28); }
+.phone-back .plateau i { position: absolute; border-radius: 50%; }
+.phone-back .lens { width: 24%; aspect-ratio: 1; background: radial-gradient(circle at 42% 40%, #4C5C8E 0 4%, #10131B 10% 56%, #23262D 58% 64%, #F08A45 66% 74%, #B9531A 76%); box-shadow: 0 2px 5px rgba(90, 30, 0, 0.4); }
+.phone-back .l1 { left: 3%; top: 4%; }
+.phone-back .l2 { left: 3%; top: 54%; }
+.phone-back .l3 { left: 31%; top: 29%; }
+.phone-back .flash { left: 78%; top: 13%; width: 10%; aspect-ratio: 1; background: radial-gradient(circle, #FFFDF4 0 35%, #E9E2CF 60%, #C9BFA6); }
+.phone-back .sensor { left: 78%; top: 69%; width: 9%; aspect-ratio: 1; background: radial-gradient(circle at 40% 40%, #2B2F38, #0B0C10 70%); }
+.phone-back .mic { left: 82.5%; top: 49%; width: 1.4%; aspect-ratio: 1; background: #7A3510; }
+.phone-back .mark { position: absolute; left: 50%; top: 66%; transform: translate(-50%, -50%); width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(150, 55, 10, 0.1); color: rgba(140, 50, 8, 0.5); font-weight: 800; font-size: 30px; box-shadow: inset 0 1px 2px rgba(120, 40, 5, 0.25), 0 1px 0 rgba(255, 255, 255, 0.2); }
+.phone { position: relative; width: min(260px, 70vw); aspect-ratio: 390 / 844; border-radius: 44px; background: #111312; padding: 10px; box-shadow: 0 0 0 3px #E5722C, var(--shadow); }
+.phone::after { content: ""; position: absolute; right: -6px; top: 28%; width: 3px; height: 11%; border-radius: 2px; background: #D9641F; }
 .phone::before { content: ""; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 30%; height: 22px; border-radius: 999px; background: #111312; z-index: 1; }
 .phone .screen { width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #F2F2F5; padding-top: 13%; }
 .phone img { width: 100%; height: auto; }
