@@ -674,6 +674,91 @@ await check('the app and FAQ details for Google match the visible page, in both 
   await v.close();
 });
 
+// The TACO food pages, built by tools/build-food-pages.mjs from data/taco.json (the app's own food data, copied in).
+const TACO = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/taco.json'), 'utf8'));
+const FOOD_DIR = path.join(ROOT, 'alimentos');
+const foodPages = fs.readdirSync(FOOD_DIR, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name);
+const ptNumber = (n, digits) => n.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+await check('every TACO food has one page with the app\'s numbers, the credit line, its own title and description, and the seo-food box', async () => {
+  expect(TACO.foods.length === 591 && foodPages.length === TACO.foods.length, `${TACO.foods.length} foods, ${foodPages.length} pages`);
+  const titles = new Set(), descriptions = new Set();
+  const byName = new Map();
+  for (const slug of foodPages) {
+    const html = fs.readFileSync(path.join(FOOD_DIR, slug, 'index.html'), 'utf8');
+    const name = html.match(/nome na tabela: “([^”]+)”/)?.[1]?.replace(/&amp;/g, '&');
+    // The page drops the table's footnote marks ("Cerveja, pilsen 2").
+    const food = TACO.foods.find(f => f.name.replace(/(?<!tipo) \d$/, '') === name);
+    expect(food && !byName.has(name), `/alimentos/${slug}/ does not match exactly one food (${name})`);
+    byName.set(name, slug);
+    const shown = key => html.match(new RegExp(`data-${key}>([^<]+)<`))?.[1];
+    const want = { kcal: ptNumber(food.kcal, 0), protein: ptNumber(food.protein, 1) + ' g', carbs: ptNumber(food.carbs, 1) + ' g', fat: ptNumber(food.fat, 1) + ' g' };
+    for (const key of Object.keys(want)) expect(shown(key) === want[key], `/alimentos/${slug}/ shows ${key} ${shown(key)}, the data says ${want[key]}`);
+    const title = html.match(/<title>([^<]+)<\/title>/)[1], description = html.match(/<meta name="description" content="([^"]+)">/)[1];
+    expect(!titles.has(title) && !descriptions.has(description), `/alimentos/${slug}/ repeats a title or description`);
+    titles.add(title); descriptions.add(description);
+    expect(description.includes(`${want.kcal} kcal em 100 g, com ${want.protein} de proteína, ${want.carbs} de carboidrato e ${want.fat} de gordura`), `/alimentos/${slug}/ description numbers: ${description}`);
+    // About 60 characters show in Google; only names that are long on their own go over, with nothing added but ": calorias".
+    expect(title.length <= 60 || title === html.match(/<h1>([^<]+)<\/h1>/)[1] + ': calorias', `/alimentos/${slug}/ title is ${title.length} characters: ${title}`);
+    // Names read as people say them: no dangling "de" or "para", no table footnote marks.
+    const heading = html.match(/<h1>([^<]+)<\/h1>/)[1];
+    expect(!/ (de|do|da|para|com|em|e)$/.test(heading) && !/(?<!tipo) \d$/.test(heading) && title.startsWith(heading + ':'), `/alimentos/${slug}/ is called "${heading}"`);
+    expect(html.includes(`<link rel="canonical" href="${SITE}/alimentos/${slug}/">`) && !/name="robots"/.test(html), `/alimentos/${slug}/ canonical or robots`);
+    expect(html.includes('Fonte: <a href=') && html.includes('Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada. NEPA–UNICAMP, Campinas, 2011'), `/alimentos/${slug}/ lacks the TACO credit`);
+    expect(html.includes('href="/?origem=seo-food"') && html.includes('O Kilo registra isso com um toque') && html.includes('<a class="brand" href="/">'), `/alimentos/${slug}/ lacks the tagged box or the link home`);
+    for (const [, link] of html.matchAll(/href="(\/alimentos\/[^"#]*)/g)) expect(fs.existsSync(path.join(ROOT, link, 'index.html')), `/alimentos/${slug}/ links to missing ${link}`);
+  }
+  expect(byName.size === TACO.foods.length, 'some foods have no page');
+  // The copy matches the printed table (TACO 4th edition, Tabela 1), checked by hand for these rows; "Tr" and "NA" are 0.
+  const BOOK = [['Arroz, integral, cozido', 124, 2.6, 25.8, 1.0], ['Pão, trigo, francês', 300, 8.0, 58.6, 3.1], ['Milho, amido, cru', 361, 0.6, 87.1, 0],
+    ['Batata, inglesa, cozida', 52, 1.2, 11.9, 0], ['Batata, frita, tipo chips, industrializada', 543, 5.6, 51.2, 36.6], ['Aveia, flocos, crua', 394, 13.9, 66.6, 8.5]];
+  for (const [name, kcal, protein, carbs, fat] of BOOK) {
+    const food = TACO.foods.find(f => f.name === name);
+    expect(food && food.kcal === kcal && food.protein === protein && food.carbs === carbs && food.fat === fat, `${name} differs from the book: ${JSON.stringify(food)}`);
+  }
+  // The database keeps only well-formed tags.
+  expect(/^[a-z0-9][a-z0-9-]{0,39}$/.test('seo-food'), 'seo-food is not a valid tag');
+  return `${foodPages.length} pages`;
+});
+
+await check('the food index lists every food page by category, and the sitemap lists them all', async () => {
+  const index = fs.readFileSync(path.join(FOOD_DIR, 'index.html'), 'utf8');
+  const linked = [...index.matchAll(/<li><a href="\/alimentos\/([^"/]+)\/">/g)].map(m => m[1]);
+  expect(linked.length === foodPages.length && new Set(linked).size === linked.length && foodPages.every(s => linked.includes(s)), `index links ${linked.length} foods`);
+  for (const c of TACO.categories) expect(index.includes(`>${c.name.replace(/&/g, '&amp;')}</h2>`), `index has no ${c.name} heading`);
+  const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+  const listed = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+  expect(listed.includes(SITE + '/alimentos/') && foodPages.every(s => listed.includes(`${SITE}/alimentos/${s}/`)), 'sitemap misses food pages');
+  expect(new Set(listed).size === listed.length, 'sitemap repeats an address');
+  const main = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  expect(main.includes('href="/alimentos/"'), 'the main page does not link to the food pages');
+});
+
+await check('a food page reads well on a phone in light and dark mode, and its box opens the form tagged seo-food', async () => {
+  for (const colorScheme of ['light', 'dark']) {
+    const v = await visitor({ colorScheme, viewport: { width: 360, height: 740 } });
+    for (const url of ['/alimentos/', '/alimentos/arroz-integral-cozido/', '/alimentos/margarina-com-oleo-interesterificado-sem-sal-65-por-cento-de-lipideos/']) {
+      await v.page.goto(base + url);
+      const wide = await v.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(wide <= 0, `${url} (${colorScheme}) scrolls sideways by ${wide}px`);
+    }
+    await v.page.goto(base + '/alimentos/arroz-integral-cozido/');
+    expect(await v.page.getByRole('heading', { level: 1 }).textContent() === 'Arroz integral cozido', 'food heading');
+    expect((await v.page.locator('[data-kcal]').textContent()) === '124', 'calories on the page');
+    const bg = await v.page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(colorScheme === 'dark' ? bg === 'rgb(23, 26, 25)' : bg === 'rgb(245, 244, 238)', `${colorScheme} background ${bg}`);
+    if (colorScheme === 'light') {
+      await v.page.getByRole('link', { name: 'Entrar na lista de espera' }).click();
+      await v.page.waitForURL(base + '/?origem=seo-food');
+      await join(v.page, 'ana@exemplo.com');
+      await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+      expect(v.sent.length === 1 && v.sent[0].p_origem === 'seo-food', `join sent ${JSON.stringify(v.sent)}`);
+    }
+    expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
+    await v.close();
+  }
+});
+
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
   for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
     const v = await visitor({ viewport, colorScheme });
