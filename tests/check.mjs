@@ -447,15 +447,25 @@ await check('on the smallest phones the hero gorilla stays on screen and off the
 
 await check('the hero phone turns from its back to its front once it is on screen, then rests as the still picture', async () => {
   const v = await visitor();
+  // Records every change to the phone box, so a turn that ends early (an error, a stall) shows as too short.
+  await v.page.addInitScript(() => {
+    window.turnLog = [];
+    // Watches the whole document from the first byte: the turn can start before DOMContentLoaded.
+    new MutationObserver(records => {
+      const box = records.map(r => r.target).find(el => el.classList && el.classList.contains('phone-3d'));
+      if (box) window.turnLog.push({ t: performance.now(), cls: box.className, first: !!box.querySelector('.phone-first'), canvas: !!box.querySelector('.phone-anim') });
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true });
+  });
   await v.page.goto(base + '/');
-  const box = v.page.locator('.phone-3d');
-  await v.page.waitForFunction(() => document.querySelector('.phone-3d .phone-anim'), null, { timeout: TIMEOUT })
-    .catch(() => { throw new Error('the turning video never started'); });
-  expect(await box.evaluate(el => el.classList.contains('turning')), 'the video plays without hiding the still behind it');
-  await v.page.waitForFunction(() => !document.querySelector('.phone-3d .phone-anim'), null, { timeout: TIMEOUT })
-    .catch(() => { throw new Error('the turning video never finished'); });
-  const still = await box.evaluate(el => ({ cls: el.className, shown: getComputedStyle(el.querySelector('.phone-still')).visibility }));
-  expect(still.cls === 'phone-3d' && still.shown === 'visible', `after the turn: ${JSON.stringify(still)}`);
+  await v.page.waitForFunction(() => window.turnLog.some(e => e.cls.includes('turning')) && window.turnLog.at(-1).cls === 'phone-3d', null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`the turn never ran to its end: ${JSON.stringify(await v.page.evaluate(() => window.turnLog))}`); });
+  const log = await v.page.evaluate(() => window.turnLog);
+  expect(log.some(e => e.cls.includes('waiting') && e.first), `the back of the phone did not stand in while the video loaded: ${JSON.stringify(log)}`);
+  const from = log.find(e => e.cls.includes('turning') && e.canvas).t;
+  const to = log.find(e => e.t > from && e.cls === 'phone-3d').t;
+  expect(to - from > 1000, `the turn lasted ${Math.round(to - from)} ms; the video is 1.4 s, so it stopped early`);
+  const still = await v.page.locator('.phone-3d .phone-still').evaluate(el => ({ opacity: getComputedStyle(el).opacity, left: el.parentNode.children.length }));
+  expect(still.opacity === '1' && still.left === 1, `after the turn the box holds ${still.left} elements and the still's opacity is ${still.opacity}`);
   expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
   await v.close();
 });
@@ -545,10 +555,10 @@ await check('with reduce motion on, the phone is a still picture and nothing tur
   await v.page.waitForTimeout(300);
   const state = await v.page.evaluate(() => ({
     video: !!document.querySelector('.phone-3d .phone-anim') || document.querySelector('.phone-3d').className !== 'phone-3d',
-    still: getComputedStyle(document.querySelector('.phone-3d .phone-still')).visibility,
+    still: getComputedStyle(document.querySelector('.phone-3d .phone-still')).opacity,
     reveal: document.querySelectorAll('.reveal').length,
   }));
-  expect(!state.video && state.still === 'visible', `the phone moves: ${JSON.stringify(state)}`);
+  expect(!state.video && state.still === '1', `the phone moves: ${JSON.stringify(state)}`);
   expect(state.reveal === 0, `${state.reveal} sections still slide in`);
   await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
   const bar = v.page.locator('.join-bar');
@@ -578,12 +588,12 @@ await check('printed, and without JavaScript, the whole page shows and the phone
   const off = await visitor({ javaScriptEnabled: false });
   await off.page.goto(base + '/');
   const state = await off.page.evaluate(() => ({
-    turn: getComputedStyle(document.querySelector('.phone-3d .phone-still')).visibility,
+    turn: getComputedStyle(document.querySelector('.phone-3d .phone-still')).opacity,
     faint: [...document.querySelectorAll('main > section')].filter(el => getComputedStyle(el).opacity !== '1').length,
     card: getComputedStyle(document.querySelector('.qr-card')).display,
     bar: getComputedStyle(document.querySelector('.join-bar')).visibility,
   }));
-  expect(state.turn === 'visible' && state.faint === 0 && state.card === 'none' && state.bar === 'hidden', `without JavaScript: ${JSON.stringify(state)}`);
+  expect(state.turn === '1' && state.faint === 0 && state.card === 'none' && state.bar === 'hidden', `without JavaScript: ${JSON.stringify(state)}`);
   await off.close();
 });
 

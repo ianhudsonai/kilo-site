@@ -400,56 +400,89 @@
     video.muted = true;
     video.playsInline = true;
     video.setAttribute('playsinline', '');
-    video.preload = 'auto';
-    [['webm', 'video/webm; codecs="vp9"'], ['mp4', 'video/mp4']].forEach(function (kind) {
+    video.setAttribute('muted', '');
+    video.preload = 'none';
+    // H.264 first: smaller, and decoded in hardware on iPhones. A browser without it (open-source Chromium) takes the VP9 copy.
+    [['mp4', 'video/mp4; codecs="avc1.64002A"'], ['webm', 'video/webm; codecs="vp9"']].forEach(function (kind) {
       if (!video.canPlayType(kind[1])) return;
       var source = document.createElement('source');
       source.src = box.getAttribute('data-turn') + '.' + kind[0];
       source.type = kind[1];
       video.appendChild(source);
     });
-    if (!video.firstChild) return;
+    if (!video.lastChild) return;
     canvas.className = 'phone-anim';
     canvas.setAttribute('aria-hidden', 'true');
-    box.classList.add('waiting');
-    // A slow video is not worth the wait: after 2.5 s the still stays and nothing turns.
+    // While the video loads, the first frame (the phone's back) stands in, so the phone never vanishes.
+    var first = document.createElement('img');
+    first.className = 'phone-first';
+    first.alt = '';
+    first.src = box.getAttribute('data-turn') + '-first.webp';
+    // iPhones pause a video that isn't on the page, so it sits in a 1 px window inside the box.
+    var holder = document.createElement('div');
+    holder.className = 'phone-video';
+    holder.appendChild(video);
     var done = false;
-    var timer = setTimeout(stop, 2500);
+    var shown = false;
+    var timer = 0;
+
     function stop() {
       if (done) return;
       done = true;
       clearTimeout(timer);
       box.classList.remove('waiting', 'turning');
-      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+      [canvas, first, holder].forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
       video.pause();
+      while (video.firstChild) video.removeChild(video.firstChild);
+      video.removeAttribute('src');
+      video.load();
+      var lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
     }
-    video.addEventListener('error', stop, true);
-    video.addEventListener('ended', function () { draw(); stop(); });
-    video.addEventListener('loadeddata', function () {
-      if (done) return;
-      clearTimeout(timer);
+    function show() {
+      if (done || shown) return;
+      shown = true;
       if (!setUp()) { stop(); return; }
       draw();
       box.appendChild(canvas);
+      if (first.parentNode) first.parentNode.removeChild(first);
       box.classList.add('turning');
       box.classList.remove('waiting');
-      var seen = new IntersectionObserver(function (entries) {
-        if (!entries[0].isIntersecting) return;
-        seen.disconnect();
-        var started = video.play();
-        if (started && started.catch) started.catch(stop);
-        loop();
-      }, { threshold: 0.1 });
-      seen.observe(box);
-    });
-    video.load();
+      // However the video behaves from here, the still is back within the turn's length and a little more.
+      clearTimeout(timer);
+      timer = setTimeout(stop, ((video.duration || 2) + 1.5) * 1000);
+      loop();
+    }
+    function start() {
+      box.classList.add('waiting');
+      box.appendChild(first);
+      box.appendChild(holder);
+      video.preload = 'auto';
+      // Slow to start is not worth the wait: after 3 s the still stays and nothing turns.
+      timer = setTimeout(stop, 3000);
+      video.addEventListener('playing', show);
+      video.addEventListener('ended', function () { draw(); stop(); });
+      video.addEventListener('pause', function () { if (!video.ended) stop(); });
+      video.addEventListener('error', stop);
+      video.lastChild.addEventListener('error', stop);
+      video.load();
+      var started = video.play();
+      if (started && started.catch) started.catch(stop);
+    }
+    var seen = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) return;
+      seen.disconnect();
+      start();
+    }, { threshold: 0.1 });
+    seen.observe(box);
 
     function loop() {
       if (done) return;
       draw();
-      if (!video.ended) requestAnimationFrame(loop);
+      requestAnimationFrame(loop);
     }
     function setUp() {
+      if (!video.videoWidth) return false;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight / 2;
       var program = gl.createProgram();
@@ -479,6 +512,7 @@
       return true;
     }
     function draw() {
+      if (done || video.readyState < 2) return;
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
