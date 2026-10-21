@@ -225,6 +225,68 @@ await check('?lang=en and the English switch show the page in English, and a joi
   await w.close();
 });
 
+await check('"O Kilo aprende com você" explains the three things Kilo learns', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const section = v.page.locator('section#aprende');
+  await section.getByRole('heading', { level: 2, name: 'O Kilo aprende com você' }).waitFor();
+  const titles = await section.getByRole('heading', { level: 3 }).allInnerTexts();
+  expect(JSON.stringify(titles) === JSON.stringify(['A carga da próxima série', 'Seu gasto real', 'Check-in semanal']), `blocks read ${JSON.stringify(titles)}`);
+  await v.close();
+});
+
+await check('Treino, Alimentação and Meta e peso each show a loaded app screenshot and two lines', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const cards = v.page.locator('section#telas figure');
+  expect((await cards.count()) === 3, `expected 3 screens, saw ${await cards.count()}`);
+  const names = [];
+  for (let i = 0; i < 3; i++) {
+    const card = cards.nth(i);
+    await card.scrollIntoViewIfNeeded();
+    const img = card.locator('img');
+    await v.page.waitForFunction(el => el.complete && el.naturalWidth > 0, await img.elementHandle(), { timeout: TIMEOUT })
+      .catch(() => { throw new Error(`screen ${i + 1} image did not load`); });
+    expect(((await img.getAttribute('alt')) || '').length > 20, `screen ${i + 1} has no real alt text`);
+    names.push((await card.getByRole('heading', { level: 3 }).innerText()).trim());
+    expect((await card.locator('p').count()) === 2, `screen ${i + 1} should have two lines`);
+  }
+  expect(JSON.stringify(names) === JSON.stringify(['Treino', 'Alimentação', 'Meta e peso']), `screens read ${JSON.stringify(names)}`);
+  expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
+  await v.close();
+});
+
+await check('six extras, the privacy promise and the six-question FAQ are on the page', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  expect((await v.page.locator('section#extras li').count()) === 6, `expected 6 extras, saw ${await v.page.locator('section#extras li').count()}`);
+  await v.page.getByRole('heading', { name: 'Sem anúncios, sem rastreamento' }).waitFor();
+  const questions = v.page.locator('section#perguntas summary');
+  expect((await questions.count()) === 6, `expected 6 questions, saw ${await questions.count()}`);
+  const android = v.page.locator('section#perguntas details', { hasText: 'Tem para Android?' });
+  const answer = android.locator('p');
+  expect(!(await answer.isVisible()), 'answers should start closed');
+  await android.locator('summary').click();
+  expect((await answer.innerText()).trim() === 'Primeiro no iPhone. O Android vem depois: entre na lista e avisamos.', `Android answer reads "${await answer.innerText()}"`);
+  await v.close();
+});
+
+await check('every text on the page has an English version', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const pt = await v.page.locator('[data-t]').evaluateAll(els => els.map(el => [el.getAttribute('data-t'), el.textContent.trim()]));
+  await v.page.getByRole('button', { name: 'English' }).click();
+  const en = await v.page.locator('[data-t]').evaluateAll(els => els.map(el => el.textContent.trim()));
+  // Words that are the same in both languages.
+  const same = new Set(['Kilo']);
+  const missing = pt.filter(([key, text], i) => !en[i] || (en[i] === text && !same.has(text))).map(([key]) => key);
+  expect(missing.length === 0, `no English for: ${[...new Set(missing)].join(', ')}`);
+  const altsPt = await v.page.locator('[data-t-alt]').count();
+  expect(altsPt >= 4, `expected the hero and 3 screens to have translated alt text, saw ${altsPt}`);
+  await v.close();
+  return `${pt.length} texts`;
+});
+
 await check('no sideways scroll on a small phone, in light and dark mode', async () => {
   for (const colorScheme of ['light', 'dark']) {
     const v = await visitor({ viewport: { width: 375, height: 667 }, colorScheme });
