@@ -20,10 +20,26 @@ const TACO_DIR = 'data/food-sources/taco';
 const git = (...args) => execFileSync('git', ['-C', app, ...args]).toString().trim();
 if (git('status', '--porcelain', '--', GENERATED, TACO_DIR)) { console.error(`${app} has local changes to the food data; copy from a clean checkout`); process.exit(1); }
 
-/** The CSV files' format: comma separated, fields with commas in double quotes. */
+/** One CSV line: comma separated, a field with commas in double quotes, "" for a quote inside one. Empty fields stay ''. */
+function csvFields(line) {
+  const fields = [];
+  let field = '', quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quoted) {
+      if (c === '"' && line[i + 1] === '"') { field += '"'; i++; } else if (c === '"') quoted = false; else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ',') { fields.push(field); field = ''; } else field += c;
+  }
+  fields.push(field);
+  return fields;
+}
 function parseCsv(text) {
-  const [head, ...lines] = text.trim().split(/\r?\n/).map(line => [...line.matchAll(/("([^"]*)"|[^,]*)(,|$)/g)].slice(0, -1).map(m => m[2] ?? m[1]));
-  return lines.map(fields => Object.fromEntries(head.map((key, i) => [key, fields[i]])));
+  const [head, ...lines] = text.trim().split(/\r?\n/).map(csvFields);
+  return lines.map(fields => {
+    if (fields.length !== head.length) throw new Error(`a CSV line has ${fields.length} fields, the header ${head.length}`);
+    return Object.fromEntries(head.map((key, i) => [key, fields[i]]));
+  });
 }
 
 const source = fs.readFileSync(path.join(app, GENERATED), 'utf8');
@@ -38,7 +54,8 @@ const categories = parseCsv(fs.readFileSync(path.join(app, TACO_DIR, 'categories
 const foods = table.split('\n').map(line => {
   const [id, name, kcal, protein, carbs, fat] = line.split('\t');
   if (!categoryOf.has(id)) throw new Error(`food ${id} has no category`);
-  if (notApplicable.includes(id) !== (blank.get(id) ?? []).length > 0) throw new Error(`food ${id}: the app's "not applicable" list and the source file disagree`);
+  if (!blank.has(id)) throw new Error(`food ${id} has no nutrients row`);
+  if (notApplicable.includes(id) !== blank.get(id).length > 0) throw new Error(`food ${id}: the app's "not applicable" list and the source file disagree`);
   return { id: Number(id), name, category: categoryOf.get(id), kcal: Number(kcal), protein: Number(protein), carbs: Number(carbs), fat: Number(fat), ...(blank.get(id).length ? { notApplicable: blank.get(id) } : {}) };
 });
 
@@ -46,7 +63,7 @@ const commit = git('log', '-1', '--format=%H', '--', GENERATED, TACO_DIR);
 const data = {
   source: {
     note: 'Copied by tools/copy-taco-data.mjs from the Kilo app repo; do not edit by hand.',
-    repo: 'ianhudsonai/fitness-app', files: [GENERATED, `${TACO_DIR}/food.csv`, `${TACO_DIR}/categories.csv`],
+    repo: 'ianhudsonai/fitness-app', files: [GENERATED, `${TACO_DIR}/food.csv`, `${TACO_DIR}/categories.csv`, `${TACO_DIR}/nutrients.csv`],
     commit, commitDate: git('log', '-1', '--format=%cs', commit), copiedOn: new Date().toISOString().slice(0, 10),
     table: 'Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada, NEPA–UNICAMP, Campinas, 2011',
     units: 'per 100 g of edible portion; kcal, then protein, carbs and fat in grams. "notApplicable" lists the macros the table marks "NA", which the app stores as 0.',

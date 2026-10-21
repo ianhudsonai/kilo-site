@@ -687,7 +687,8 @@ await check('every TACO food has one page with the app\'s numbers, the credit li
   for (const slug of foodPages) {
     const html = fs.readFileSync(path.join(FOOD_DIR, slug, 'index.html'), 'utf8');
     const name = html.match(/nome na tabela: “([^”]+)”/)?.[1]?.replace(/&amp;/g, '&');
-    const food = TACO.foods.find(f => f.name === name);
+    // The page drops the table's footnote marks ("Cerveja, pilsen 2").
+    const food = TACO.foods.find(f => f.name.replace(/(?<!tipo) \d$/, '') === name);
     expect(food && !byName.has(name), `/alimentos/${slug}/ does not match exactly one food (${name})`);
     byName.set(name, slug);
     const shown = key => html.match(new RegExp(`data-${key}>([^<]+)<`))?.[1];
@@ -696,7 +697,12 @@ await check('every TACO food has one page with the app\'s numbers, the credit li
     const title = html.match(/<title>([^<]+)<\/title>/)[1], description = html.match(/<meta name="description" content="([^"]+)">/)[1];
     expect(!titles.has(title) && !descriptions.has(description), `/alimentos/${slug}/ repeats a title or description`);
     titles.add(title); descriptions.add(description);
-    expect(description.includes(want.kcal + ' kcal'), `/alimentos/${slug}/ description lacks its calories`);
+    expect(description.includes(`${want.kcal} kcal em 100 g, com ${want.protein} de proteína, ${want.carbs} de carboidrato e ${want.fat} de gordura`), `/alimentos/${slug}/ description numbers: ${description}`);
+    // About 60 characters show in Google; only names that are long on their own go over, with nothing added but ": calorias".
+    expect(title.length <= 60 || title === html.match(/<h1>([^<]+)<\/h1>/)[1] + ': calorias', `/alimentos/${slug}/ title is ${title.length} characters: ${title}`);
+    // Names read as people say them: no dangling "de" or "para", no table footnote marks.
+    const heading = html.match(/<h1>([^<]+)<\/h1>/)[1];
+    expect(!/ (de|do|da|para|com|em|e)$/.test(heading) && !/(?<!tipo) \d$/.test(heading) && title.startsWith(heading + ':'), `/alimentos/${slug}/ is called "${heading}"`);
     expect(html.includes(`<link rel="canonical" href="${SITE}/alimentos/${slug}/">`) && !/name="robots"/.test(html), `/alimentos/${slug}/ canonical or robots`);
     expect(html.includes('Fonte: <a href=') && html.includes('Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada. NEPA–UNICAMP, Campinas, 2011'), `/alimentos/${slug}/ lacks the TACO credit`);
     expect(html.includes('href="/?origem=seo-food"') && html.includes('O Kilo registra isso com um toque') && html.includes('<a class="brand" href="/">'), `/alimentos/${slug}/ lacks the tagged box or the link home`);

@@ -27,10 +27,15 @@ const kcal = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
  * The table's name as people say it, for headings, titles and addresses: "Arroz, integral, cozido" is "Arroz integral
  * cozido", "Coco, água de" is "Água de coco", and the table's footnote marks ("Cerveja, pilsen 2") are dropped.
  */
-function plain(name) {
-  let parts = name.split(/\s*,\s*/);
-  if (parts.length === 2 && / de$/.test(parts[1])) parts = [parts[1], parts[0].toLowerCase()];
-  const text = parts.join(' ').replace(/\s+/g, ' ').replace(/(?<!tipo) \d$/, '').trim();
+// Names the general rule below can't turn into Portuguese people say, by the table's food number.
+const SAID = { 14: 'Mistura para bolo', 30: 'Mistura para curau de milho verde', 472: 'Aguardente de cana' };
+/** The table's footnote mark at the end of a name ("Cerveja, pilsen 2"), which the pages don't carry. */
+const unmarked = name => name.replace(/(?<!tipo) \d$/, '');
+function plain(food) {
+  if (SAID[food.id]) return SAID[food.id];
+  let parts = unmarked(food.name).split(/\s*,\s*/);
+  if (parts.length === 2 && / (de|para)$/.test(parts[1])) parts = [parts[1], parts[0].toLowerCase()];
+  const text = parts.join(' ').replace(/\s+/g, ' ').trim();
   return text[0].toUpperCase() + text.slice(1);
 }
 const slugOf = name => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/%/g, ' por cento ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -38,9 +43,10 @@ const slugOf = name => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase
 const categories = new Map(data.categories.map(c => [c.id, { ...c, slug: slugOf(c.name), foods: [] }]));
 const used = new Set();
 const foods = data.foods.map(food => {
-  const name = plain(food.name);
-  let slug = slugOf(name);
-  if (used.has(slug)) slug += '-' + food.id;
+  const name = plain(food);
+  const slug = slugOf(name);
+  // An address must keep pointing at the same food, so a clash is fixed by hand (in SAID) rather than numbered.
+  if (used.has(slug)) throw new Error(`two foods would share /${DIR}/${slug}/; give one a name in SAID`);
   used.add(slug);
   const page = { ...food, slug, plain: name, url: `/${DIR}/${slug}/` };
   categories.get(food.category).foods.push(page);
@@ -64,6 +70,9 @@ function head({ title, description, url }) {
 <meta property="og:title" content="${escape(title)}">
 <meta property="og:description" content="${escape(description)}">
 <meta property="og:image" content="${SITE}/assets/img/compartilhar.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="O app de treino e dieta que aprende com você: o Kilo no iPhone, ao lado do gorila do Kilo">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/assets/pages.css">
 </head>
@@ -75,7 +84,7 @@ function head({ title, description, url }) {
 
 const joinCard = lead => `  <section class="join-card" aria-labelledby="join-title">
     <h2 id="join-title">O Kilo registra isso com um toque</h2>
-    <p>${lead} A Tabela TACO já vem dentro do app, e a busca funciona sem internet.</p>
+    <p>${lead} A Tabela TACO já vem dentro do app, a busca funciona sem internet, e os alimentos que você mais usa aparecem primeiro em cada refeição.</p>
     <a class="cta" href="/?origem=${TAG}">Entrar na lista de espera</a>
     <p class="small">Grátis, sem anúncios. Primeiro no iPhone.</p>
   </section>
@@ -101,7 +110,8 @@ const NA_WORDS = { protein: 'a proteína', carbs: 'o carboidrato', fat: 'a gordu
 function foodPage(food) {
   const category = categories.get(food.category);
   const p = food.plain;
-  const title = `${p}: calorias e macros em 100 g · Kilo`;
+  // Google shows about 60 characters; long names drop the words a search would not need.
+  const title = [`${p}: calorias e macros · Kilo`, `${p}: calorias · Kilo`].find(t => t.length <= 60) ?? `${p}: calorias`;
   const description = `${p} tem ${kcal(food.kcal)} kcal em 100 g, com ${grams(food.protein)} g de proteína, ${grams(food.carbs)} g de carboidrato e ${grams(food.fat)} g de gordura, segundo a Tabela TACO.`;
   const at = category.foods.indexOf(food);
   // The nearest foods in the table's own order: usually the same food cooked another way, then its neighbours.
@@ -113,7 +123,7 @@ function foodPage(food) {
     + crumbs([['Kilo', '/'], ['Alimentos', `/${DIR}/`], [category.name, `/${DIR}/#${category.slug}`]])
     + `  <main>
   <h1>${escape(p)}</h1>
-  <p class="sub">Calorias e macronutrientes em 100 g, pela Tabela TACO (nome na tabela: “${escape(food.name)}”).</p>
+  <p class="sub">Calorias e macronutrientes em 100 g, pela Tabela TACO (nome na tabela: “${escape(unmarked(food.name))}”).</p>
   <section class="facts" aria-label="Valores em 100 g">
     <p class="kcal"><strong data-kcal>${kcal(food.kcal)}</strong> <span>kcal em 100 g</span></p>
     <table class="macros">
@@ -121,7 +131,7 @@ ${MACROS.map(([key, label]) => `      <tr><th scope="row">${label}</th><td data-
     </table>
 ${naNote}  </section>
   <p class="source">Fonte: <a href="${TACO_URL}">${CREDIT}</a>. Valores por 100 g da parte comestível.</p>
-${joinCard(`No Kilo, você busca “${escape(p.toLowerCase())}”, escolhe quantos gramas comeu, e as calorias e os macros entram no seu dia.`)}
+${joinCard(`No Kilo, você busca “${escape(p.toLowerCase())}”, escolhe quantos gramas comeu e as calorias e os macros entram no seu dia.`)}
   <section class="more" aria-labelledby="more-title">
     <h2 id="more-title">Mais em ${escape(category.name)}</h2>
     <ul class="list">${related.map(row).join('')}</ul>
@@ -135,7 +145,7 @@ function indexPage() {
   const groups = [...categories.values()].filter(c => c.foods.length);
   return head({
     title: 'Calorias dos alimentos: Tabela TACO completa · Kilo',
-    description: `Calorias, proteína, carboidrato e gordura em 100 g dos ${foods.length} alimentos da Tabela TACO (NEPA–Unicamp), por categoria: arroz, feijão, frutas, carnes e mais.`,
+    description: `Calorias, proteína, carboidrato e gordura em 100 g dos ${foods.length} alimentos da Tabela TACO (NEPA–UNICAMP), por categoria: arroz, feijão, frutas, carnes e mais.`,
     url: `/${DIR}/`,
   })
     + crumbs([['Kilo', '/'], ['Alimentos', null]])
@@ -143,7 +153,7 @@ function indexPage() {
   <h1>Calorias dos alimentos</h1>
   <p class="sub">Os ${foods.length} alimentos da Tabela TACO, com calorias, proteína, carboidrato e gordura em 100 g. Toque em um alimento para ver tudo.</p>
   <ul class="jump" aria-label="Categorias">${groups.map(c => `<li><a href="#${c.slug}">${escape(c.name)}</a></li>`).join('')}</ul>
-${joinCard('No Kilo, você busca o alimento, escolhe quantos gramas comeu, e as calorias e os macros entram no seu dia.')}
+${joinCard('No Kilo, você busca o alimento, escolhe quantos gramas comeu e as calorias e os macros entram no seu dia.')}
 ${groups.map(c => `  <section class="group" id="${c.slug}" aria-labelledby="h-${c.slug}">
     <h2 id="h-${c.slug}">${escape(c.name)}</h2>
     <ul class="list">${c.foods.map(row).join('')}</ul>
@@ -163,6 +173,8 @@ foods.forEach(food => write(food.slug, foodPage(food)));
 const START = '  <!-- alimentos: written by tools/build-food-pages.mjs -->', END = '  <!-- /alimentos -->';
 const sitemapFile = path.join(ROOT, 'sitemap.xml');
 let sitemap = fs.readFileSync(sitemapFile, 'utf8');
+const marks = [sitemap.split(START).length - 1, sitemap.split(END).length - 1];
+if (marks.join() !== '0,0' && marks.join() !== '1,1') throw new Error(`sitemap.xml has ${marks[0]} start and ${marks[1]} end markers for the food part; fix it by hand`);
 const block = [START, ...[`/${DIR}/`, ...foods.map(f => f.url)].map(url => `  <url><loc>${SITE}${url}</loc></url>`), END].join('\n');
 sitemap = sitemap.includes(START)
   ? sitemap.slice(0, sitemap.indexOf(START)) + block + sitemap.slice(sitemap.indexOf(END) + END.length)

@@ -39,7 +39,8 @@ The "Quanto custaria tudo isso?" block shows real Brazilian prices with no app o
 One page per TACO food the app ships (591), plus an index by category, for people who search a food's calories. Each shows kcal and macros per 100 g, the table's credit line and a box that opens the main page's form tagged `seo-food`. The pages are generated; don't edit them by hand.
 
 - `data/taco.json` is a copy of the app's own TACO data, with the app commit it came from. When the app's food data changes, rerun `node tools/copy-taco-data.mjs /path/to/fitness-app` from a clean app checkout, then `node tools/build-food-pages.mjs`, which rebuilds `/alimentos/` and the food part of `sitemap.xml`.
-- TACO's terms (4th edition, NEPA–UNICAMP, p. ii) allow reproducing it "desde que seja citada a fonte", so every page cites it. Keep the credit line.
+- TACO's terms (4th edition, NEPA–UNICAMP, p. ii): "Tabela Brasileira de Composição de Alimentos – TACO é uma publicação do NEPA. É permitida a reprodução total ou parcial do material, desde que seja citada a fonte." So every page cites it; keep the credit line.
+- Names read as people say them (`plain()` in the builder); the few the rule can't fix are named by hand in `SAID`. An address never changes food: a name clash stops the build.
 - Where the table marks a macro "NA" (oils, spirits), the page shows 0 like the app, with a note saying so.
 
 ## Checking the site
