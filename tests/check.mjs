@@ -312,6 +312,36 @@ await check('the app screens below the hero show their top edge on a phone (only
   await v.close();
 });
 
+await check('the price block sits after the privacy promise, in both languages, with sources and no brand names', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const order = await v.page.evaluate(() => [...document.querySelectorAll('main > section')].map(el => el.id || el.className));
+  const at = order.indexOf('precos');
+  expect(at > 0 && order[at - 1] === 'privacidade', `sections run ${order.join(' > ')}`);
+  const block = v.page.locator('section#precos');
+  // Apps and companies behind the prices (the sources in the comment) and the apps Kilo is usually compared with.
+  const BRANDS = ['MacroFactor', 'Carbon', 'Fitbod', 'Alpha Progression', 'Cronoshare', 'Plusdin', 'Liftoff', 'Tracked', 'MyFitnessPal'];
+  for (const [lang, title] of [['pt', 'Quanto custaria tudo isso?'], ['en', 'What would all this cost?']]) {
+    if (lang === 'en') await v.page.getByRole('button', { name: 'English' }).click();
+    await block.getByRole('heading', { level: 2, name: title }).waitFor();
+    expect((await block.locator('li').count()) === 4, `${lang}: expected 3 prices and Kilo`);
+    expect((await block.locator('li.kilo').innerText()).includes('R$ 0'), `${lang}: Kilo's price is not R$ 0`);
+    const page = (await v.page.locator('body').innerText()).toLowerCase();
+    const named = BRANDS.filter(name => page.includes(name.toLowerCase()));
+    expect(named.length === 0, `${lang}: brand names on the page: ${named.join(', ')}`);
+  }
+  // Every source line in the comment beside the block has its link and check date, and each shown number is in the notes.
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const section = html.slice(html.indexOf('<section class="band prices"'), html.indexOf('</section>', html.indexOf('<section class="band prices"')));
+  const notes = section.slice(section.indexOf('<!--'), section.indexOf('-->'));
+  const lines = notes.split('\n').filter(line => line.trim().startsWith('- '));
+  expect(lines.length >= 3, `expected a source line per price, saw ${lines.length}`);
+  for (const line of lines) expect(/\| https:\/\/\S+ \| checked \d{4}-\d{2}-\d{2}/.test(line), `source line without link or date: ${line.trim()}`);
+  expect(!/apps\.apple\.com\/br\/app\/(?!id\d)/.test(notes), 'an App Store link carries the app name (use /app/id<number>)');
+  for (const figure of ['199,90', '399,90', '599,90', 'R$ 600 to R$ 1.800']) expect(notes.includes(figure), `the notes do not back ${figure}`);
+  await v.close();
+});
+
 await check('the gorilla is in the hero, by the learn blocks and at the closing box, and each one moves', async () => {
   const v = await visitor();
   await v.page.goto(base + '/');
