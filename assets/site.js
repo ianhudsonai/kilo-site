@@ -79,6 +79,7 @@
       qrTitle: 'Abra no celular',
       qrText: 'Aponte a câmera do celular para entrar na lista por lá.',
       disclaimer: 'O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.',
+      trademark: 'Apple e iPhone são marcas da Apple Inc., registradas nos EUA e em outros países.',
       invalid: 'Confira o e-mail. Parece que falta alguma coisa.',
       busy: 'Muita gente entrando agora. Tente de novo em alguns minutos.',
       failed: 'Não deu para enviar. Confira sua internet e tente de novo.',
@@ -159,6 +160,7 @@
       qrTitle: 'Open it on your phone',
       qrText: 'Point your phone\'s camera here to join the list from there.',
       disclaimer: 'Kilo is a tracking tool and does not replace advice from a doctor or dietitian.',
+      trademark: 'Apple and iPhone are trademarks of Apple Inc., registered in the U.S. and other countries.',
       invalid: 'Check the email. It looks like something is missing.',
       busy: 'Lots of people are joining right now. Try again in a few minutes.',
       failed: 'Could not send it. Check your connection and try again.',
@@ -311,16 +313,12 @@
     });
   });
 
-  // The hero phone starts facing away and spins round once it is on screen (CSS .ready / .turned). Without JavaScript,
-  // or with reduce motion, it simply faces the visitor.
-  var turn = document.querySelector('.phone-turn');
-  if (!still && watch) {
-    turn.classList.add('ready');
-    var spin = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { turn.classList.add('turned'); spin.disconnect(); }
-    }, { threshold: 0.15 });
-    spin.observe(turn);
-  }
+  // The hero phone: a rendered orange iPhone that turns from its back to its front once, when it comes on screen. The video
+  // carries its see-through edge as a grey picture under the colour one, and a small WebGL shader joins the two (an
+  // ordinary video has no transparency). The still of the last frame is the page's own picture: it shows without
+  // JavaScript, WebGL or motion, while the video loads, and again once it ends.
+  var turnBox = document.querySelector('.phone-3d');
+  if (turnBox && !still && watch) playTurn(turnBox);
 
   // Sections slide in gently the first time they come into view.
   if (!still && watch) {
@@ -394,4 +392,96 @@
   }
 
   apply();
+  function playTurn(box) {
+    var canvas = document.createElement('canvas');
+    var gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
+    if (!gl) return;
+    var video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.preload = 'auto';
+    [['webm', 'video/webm; codecs="vp9"'], ['mp4', 'video/mp4']].forEach(function (kind) {
+      if (!video.canPlayType(kind[1])) return;
+      var source = document.createElement('source');
+      source.src = box.getAttribute('data-turn') + '.' + kind[0];
+      source.type = kind[1];
+      video.appendChild(source);
+    });
+    if (!video.firstChild) return;
+    canvas.className = 'phone-anim';
+    canvas.setAttribute('aria-hidden', 'true');
+    box.classList.add('waiting');
+    // A slow video is not worth the wait: after 2.5 s the still stays and nothing turns.
+    var done = false;
+    var timer = setTimeout(stop, 2500);
+    function stop() {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      box.classList.remove('waiting', 'turning');
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+      video.pause();
+    }
+    video.addEventListener('error', stop, true);
+    video.addEventListener('ended', function () { draw(); stop(); });
+    video.addEventListener('loadeddata', function () {
+      if (done) return;
+      clearTimeout(timer);
+      if (!setUp()) { stop(); return; }
+      draw();
+      box.appendChild(canvas);
+      box.classList.add('turning');
+      box.classList.remove('waiting');
+      var seen = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        seen.disconnect();
+        var started = video.play();
+        if (started && started.catch) started.catch(stop);
+        loop();
+      }, { threshold: 0.1 });
+      seen.observe(box);
+    });
+    video.load();
+
+    function loop() {
+      if (done) return;
+      draw();
+      if (!video.ended) requestAnimationFrame(loop);
+    }
+    function setUp() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight / 2;
+      var program = gl.createProgram();
+      [[gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main() { uv = vec2(p.x + 1.0, 1.0 - p.y) * 0.5; gl_Position = vec4(p, 0.0, 1.0); }'],
+       [gl.FRAGMENT_SHADER, 'precision mediump float; uniform sampler2D t; varying vec2 uv; void main() { float a = texture2D(t, vec2(uv.x, 0.5 + uv.y * 0.5)).r; vec3 c = texture2D(t, vec2(uv.x, uv.y * 0.5)).rgb; gl_FragColor = vec4(min(c, vec3(a)), a); }']
+      ].forEach(function (part) {
+        var shader = gl.createShader(part[0]);
+        gl.shaderSource(shader, part[1]);
+        gl.compileShader(shader);
+        gl.attachShader(program, shader);
+      });
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
+      gl.useProgram(program);
+      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      var at = gl.getAttribLocation(program, 'p');
+      gl.enableVertexAttribArray(at);
+      gl.vertexAttribPointer(at, 2, gl.FLOAT, false, 0, 0);
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      return true;
+    }
+    function draw() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+  }
 })();

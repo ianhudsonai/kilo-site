@@ -1,0 +1,61 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script src="patch.js"></script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+const P = new URLSearchParams(location.search);
+const W = +P.get('w') || 600, H = +P.get('h') || 1188;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.setClearColor(0, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = +(P.get('exp') || 1);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const pm = new THREE.PMREMGenerator(renderer);
+scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+const key = new THREE.DirectionalLight(0xffffff, +(P.get('key') || 1.2)); key.position.set(-2, 3, 4); scene.add(key);
+const camera = new THREE.PerspectiveCamera(+(P.get('fov') || 22), W / H, 0.01, 100);
+const pivot = new THREE.Group(); scene.add(pivot);
+const tex = await new THREE.TextureLoader().loadAsync(P.get('screen') || 'screen.webp');
+tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+window.info = {};
+async function build() {
+  const url = P.get('model');
+  if (!url) {
+    const body = new THREE.Mesh(new RoundedBoxGeometry(0.72, 1.5, 0.08, 8, 0.1), new THREE.MeshPhysicalMaterial({ color: 0xE8722C, metalness: 0.6, roughness: 0.35 }));
+    pivot.add(body);
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 1.43), new THREE.MeshBasicMaterial({ map: tex }));
+    scr.position.z = 0.041; pivot.add(scr); return;
+  }
+  const g = await new GLTFLoader().loadAsync(url);
+  const root = g.scene; pivot.add(root);
+  const mats = new Map();
+  root.traverse(o => { if (o.isMesh) { const m = [].concat(o.material); m.forEach(x => mats.set(x.name, (mats.get(x.name) || 0) + 1)); } });
+  window.info.materials = [...mats];
+  const box = new THREE.Box3().setFromObject(root); const size = box.getSize(new THREE.Vector3()); const c = box.getCenter(new THREE.Vector3());
+  root.position.sub(c); window.info.size = size.toArray();
+  const s = 1.5 / Math.max(size.x, size.y, size.z); root.scale.setScalar(s); root.position.multiplyScalar(s);
+  if (window.patch) await window.patch(root, tex, THREE);
+}
+await build();
+camera.position.set(0, 0, +(P.get('dist') || 4.4)); camera.lookAt(0, 0, 0);
+const ease = t => 1 - Math.pow(1 - t, 3);
+// The turn: from the back (180deg) round past the front to settle slightly turned, like the site's old CSS spin.
+window.frame = (t) => {
+  const a = THREE.MathUtils.degToRad;
+  // Ease in and out across the big turn, then a small overshoot settles back.
+  const io = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  let y;
+  if (t < 0.7) y = 180 + (-24 - 180) * io(t / 0.7);
+  else y = -24 + (-12 + 24) * (1 - Math.pow(1 - (t - 0.7) / 0.3, 2));
+  pivot.rotation.y = a(+(P.get('fixed') ?? y));
+  pivot.rotation.x = a(+(P.get('tilt') || 0));
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL('image/png');
+};
+window.ready = true;
+</script></body></html>
