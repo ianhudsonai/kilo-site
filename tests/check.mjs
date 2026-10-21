@@ -323,8 +323,11 @@ await check('the gorilla is in the hero, by the learn blocks and at the closing 
     await v.page.waitForFunction(el => el.complete && el.naturalWidth > 0, await gorilla.elementHandle(), { timeout: TIMEOUT })
       .catch(() => { throw new Error(`the ${spot} gorilla image did not load`); });
     expect(((await gorilla.getAttribute('alt')) || '').length > 10, `the ${spot} gorilla has no alt text`);
-    const moving = await gorilla.evaluate(el => getComputedStyle(el).animationName);
-    expect(moving !== 'none', `the ${spot} gorilla just stands there`);
+    await v.page.waitForFunction(el => getComputedStyle(el).animationName !== 'none', await gorilla.elementHandle(), { timeout: TIMEOUT })
+      .catch(() => { throw new Error(`the ${spot} gorilla just stands there`); });
+    // He moves for a few seconds, then rests: no endless motion next to the form (WCAG 2.2.2).
+    const rounds = await gorilla.evaluate(el => getComputedStyle(el).animationIterationCount);
+    expect(rounds !== 'infinite', `the ${spot} gorilla never stops moving`);
   }
   await v.close();
 });
@@ -337,16 +340,38 @@ await check('the cheering gorilla shows next to Pronto after a successful join',
   await join(v.page, 'ana@exemplo.com');
   await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
   await cheer.waitFor({ state: 'visible', timeout: 3000 }).catch(() => { throw new Error('no cheering gorilla after joining'); });
-  expect((await cheer.evaluate(el => getComputedStyle(el).animationName)) !== 'none', 'the cheering gorilla does not move');
+  await v.page.waitForFunction(el => getComputedStyle(el).animationName !== 'none', await cheer.elementHandle(), { timeout: TIMEOUT })
+    .catch(() => { throw new Error('the cheering gorilla does not move'); });
+  expect((await v.page.locator('.join-done img.gorilla:visible').count()) === 2, 'the closing box has no cheering gorilla after joining');
+  // A screen reader lands on the success box: it must hear "Pronto!" first, not the picture.
+  const first = await v.page.locator('.join-done').first().evaluate(el => el.firstElementChild.tagName);
+  expect(first === 'H2', `the success box starts with a ${first}, not the Pronto heading`);
   await v.close();
 });
 
 await check('with reduce motion on, the gorillas hold still', async () => {
   const v = await visitor({ reducedMotion: 'reduce' });
   await v.page.goto(base + '/');
+  // Bring each page gorilla into view so its move is asked for, then check it still holds still.
+  for (const el of await v.page.locator('img.gorilla:visible').all()) {
+    await el.evaluate(node => node.scrollIntoView({ block: 'center' }));
+    await v.page.waitForFunction(node => node.classList.contains('play'), await el.elementHandle(), { timeout: TIMEOUT });
+    const name = await el.evaluate(node => getComputedStyle(node).animationName);
+    expect(name === 'none', `a gorilla in view still plays ${name}`);
+  }
   const names = await v.page.locator('img.gorilla').evaluateAll(els => els.map(el => getComputedStyle(el).animationName));
   expect(names.length >= 5, `expected the 3 page gorillas and 2 cheering ones, saw ${names.length}`);
   expect(names.every(n => n === 'none'), `some gorillas still move: ${names.join(', ')}`);
+  await v.close();
+});
+
+await check('on the smallest phones the hero gorilla stays on screen and off the email box', async () => {
+  const v = await visitor({ viewport: { width: 320, height: 640 } });
+  await v.page.goto(base + '/');
+  const g = await v.page.locator('.gorilla.wave').boundingBox();
+  const form = await v.page.locator('.hero .join-box').boundingBox();
+  expect(g.x >= 0 && g.x + g.width <= 320, `the gorilla runs from ${Math.round(g.x)}px to ${Math.round(g.x + g.width)}px on a 320px screen`);
+  expect(g.y >= form.y + form.height, 'the gorilla overlaps the email box');
   await v.close();
 });
 

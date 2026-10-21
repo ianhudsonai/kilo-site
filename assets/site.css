@@ -5,8 +5,6 @@
   --radius: 18px; --shadow: 0 18px 40px rgba(32, 35, 31, 0.14);
 }
 @media (prefers-color-scheme: dark) {
-  .gorilla { filter: drop-shadow(0 0 1.5px rgba(245, 244, 233, 0.6)); }
-  .closing .closing-text .gorilla { filter: none; }
   :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --error: #FF9B8C; --ink: #F5F4E9; --on-ink: #171A19; --shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.14), 0 18px 40px rgba(0, 0, 0, 0.45); }
 }
 * { box-sizing: border-box; }
@@ -41,21 +39,31 @@ h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1.02; letter-spacing:
 /* On phones the phone sits under the form, so its screen starts scrolled a little: the "Aceitar sugestão" button shows without scrolling the page. */
 @media (max-width: 899px) { .hero .phone img { margin-top: -26%; } }
 
-/* The gorilla: never just standing there. Each spot has its own move, and reduce motion stops every move.
-   On dark backgrounds a soft light edge keeps his charcoal fur from disappearing. */
+/* The gorilla: never just standing there. Each spot has its own move, played a few times (under 5 seconds) whenever he
+   comes into view; site.js adds .play. Reduce motion stops every move. On dark backgrounds (the closing block in light
+   mode, the page in dark mode) a soft light edge keeps his charcoal fur from disappearing. */
 .gorilla { display: block; height: auto; transform-origin: 50% 100%; }
 .closing .closing-text .gorilla { filter: drop-shadow(0 0 1.5px rgba(245, 244, 233, 0.6)); }
+@media (prefers-color-scheme: dark) {
+  .gorilla { filter: drop-shadow(0 0 1.5px rgba(245, 244, 233, 0.6)); }
+  .closing .closing-text .gorilla { filter: none; }
+}
 .phone-stage { position: relative; }
-.gorilla.wave { position: absolute; z-index: 2; width: 92px; bottom: -10px; left: calc(50% - min(130px, 35vw) - 58px); animation: gorilla-wave 2.6s ease-in-out infinite; }
+.gorilla.wave { position: absolute; z-index: 2; width: 92px; bottom: -10px; left: max(14px, calc(50% - min(130px, 35vw) - 58px)); }
 .band-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.gorilla.notes { width: 76px; flex: none; animation: gorilla-notes 3.4s ease-in-out infinite; }
-.gorilla.nudge { width: 96px; margin-top: 18px; animation: gorilla-nudge 1.8s ease-in-out infinite; }
-.gorilla.cheer { width: 72px; float: right; margin: -6px 0 0 12px; animation: gorilla-cheer 0.6s ease-out 0.15s 6 alternate; }
-@keyframes gorilla-wave { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg) translateY(-3px); } }
+.gorilla.notes { width: 76px; flex: none; }
+.gorilla.nudge { width: 96px; margin-top: 18px; }
+.gorilla.cheer { width: 72px; grid-column: 2; grid-row: 1 / span 3; align-self: start; }
+.gorilla.wave.play { animation: gorilla-wave 1.2s ease-in-out 3; }
+.gorilla.notes.play { animation: gorilla-notes 1.6s ease-in-out 2; }
+.gorilla.nudge.play { animation: gorilla-nudge 1.4s ease-in-out 3; }
+.gorilla.cheer.play { animation: gorilla-cheer 0.6s ease-out 0.15s 6 alternate; }
+@keyframes gorilla-wave { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg) translateY(-3px); } }
 @keyframes gorilla-notes { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-4deg); } 60% { transform: rotate(3deg) translateY(-2px); } }
 @keyframes gorilla-nudge { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(6px) rotate(3deg); } }
 @keyframes gorilla-cheer { from { transform: translateY(0) scale(1); } to { transform: translateY(-12px) scale(1.05); } }
-@media (prefers-reduced-motion: reduce) { .gorilla { animation: none !important; } }
+/* !important: it must beat every spot's own .play rule. */
+@media (prefers-reduced-motion: reduce) { .gorilla.play { animation: none !important; } }
 
 /* The waitlist form, used in the hero and the closing block. */
 .join-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; max-width: 460px; }
@@ -69,6 +77,8 @@ button.join:disabled { opacity: 0.6; cursor: default; }
 .status { margin: 10px 0 0; }
 .status:empty { display: none; }
 .status.error { color: var(--error); font-weight: 600; }
+.join-done:not([hidden]) { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; }
+.join-done > :not(.gorilla) { grid-column: 1; }
 .join-done h2 { font-size: 1.4rem; margin: 0 0 6px; }
 .join-done p { margin: 6px 0; }
 .small { font-size: 0.88rem; color: var(--muted); }

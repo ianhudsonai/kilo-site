@@ -63,7 +63,7 @@
       faq6Q: 'O que vocês fazem com meus dados?', faq6A: 'No app, nada de anúncios, análise de uso ou rastreamento, e o Kilo só lê do app Saúde. Na lista de espera, usamos seu e-mail só para avisar do lançamento; os detalhes estão na página de privacidade da lista.',
       gorillaWaveAlt: 'O gorila do Kilo dando oi',
       gorillaNotesAlt: 'O gorila do Kilo de olho no seu progresso',
-      gorillaPointAlt: 'O gorila do Kilo chamando você para a lista',
+      gorillaPointAlt: 'O gorila do Kilo convidando você para entrar na lista',
       gorillaCheerAlt: 'O gorila do Kilo comemorando com você',
       disclaimer: 'O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.',
       invalid: 'Confira o e-mail. Parece que falta alguma coisa.',
@@ -130,7 +130,7 @@
       faq6Q: 'What do you do with my data?', faq6A: 'In the app, no ads, no analytics and no tracking, and Kilo only reads from Apple Health. On the waitlist, we use your email only to tell you about the launch; the details are on the waitlist privacy page.',
       gorillaWaveAlt: 'The Kilo gorilla saying hi',
       gorillaNotesAlt: 'The Kilo gorilla keeping an eye on your progress',
-      gorillaPointAlt: 'The Kilo gorilla calling you to the list',
+      gorillaPointAlt: 'The Kilo gorilla inviting you to join the list',
       gorillaCheerAlt: 'The Kilo gorilla celebrating with you',
       disclaimer: 'Kilo is a tracking tool and does not replace advice from a doctor or dietitian.',
       invalid: 'Check the email. It looks like something is missing.',
@@ -235,6 +235,14 @@
       });
     });
   });
+
+  // The gorilla plays his move each time he comes into view, instead of moving all the time (a few seconds, then he rests).
+  if ('IntersectionObserver' in window) {
+    var watcher = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { entry.target.classList.toggle('play', entry.isIntersecting); });
+    }, { threshold: 0.6 });
+    each('img.gorilla', function (el) { watcher.observe(el); });
+  }
 
   apply();
 })();
