@@ -20,7 +20,7 @@ function loadPlaywright() {
   try { return require('playwright'); } catch { return require(path.join(execSync('npm root -g').toString().trim(), 'playwright')); }
 }
 
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain', '.json': 'application/json' };
 
 /** GitHub Pages' rules that matter here: a folder serves its index.html, and a folder without a trailing slash redirects to one. */
 function serve() {
@@ -448,15 +448,18 @@ await check('on a phone, the join bar shows once the hero email box is gone and 
   await v.page.evaluate(() => { const box = document.querySelector('#email-end').closest('[data-join]'); window.scrollBy({ top: box.getBoundingClientRect().top - innerHeight - 20, behavior: 'instant' }); });
   await v.page.waitForFunction(() => !document.querySelector('.join-bar').classList.contains('show'), null, { timeout: TIMEOUT })
     .catch(() => { throw new Error('the join bar is still coming up as the closing box arrives under it'); });
-  // Keyboard focus never lands under the bar.
+  // Keyboard focus never lands under the bar. (Wait for the bar to be fully up: one that is leaving still counts as visible.)
   await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
-  await bar.waitFor({ state: 'visible', timeout: TIMEOUT });
+  await v.page.waitForFunction(() => document.querySelector('.join-bar').classList.contains('show'), null, { timeout: TIMEOUT });
+  await v.page.waitForTimeout(400);
   await v.page.evaluate(() => {
     const summary = document.querySelector('#perguntas summary');
     window.scrollBy({ top: summary.getBoundingClientRect().top - innerHeight + 30, behavior: 'instant' });
     summary.focus();
   });
-  await v.page.waitForTimeout(900); // the questions' section finishes sliding in
+  // Let the focus scroll and the section's slide-in finish.
+  await v.page.waitForFunction(() => new Promise(done => { const y = scrollY; setTimeout(() => done(scrollY === y), 300); }), null, { timeout: TIMEOUT });
+  await v.page.waitForTimeout(700);
   const hidden = await v.page.evaluate(() => document.querySelector('#perguntas summary').getBoundingClientRect().bottom - document.querySelector('.join-bar').getBoundingClientRect().top);
   expect(hidden <= 0, `a focused question sits ${hidden}px under the join bar`);
   await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
@@ -544,6 +547,82 @@ await check('printed, and without JavaScript, the whole page shows and the phone
   }));
   expect(state.turn === 'none' && state.faint === 0 && state.card === 'none' && state.bar === 'hidden', `without JavaScript: ${JSON.stringify(state)}`);
   await off.close();
+});
+
+const SITE = 'https://kiloapp.com.br';
+
+await check('Google and link previews get a title, description, share picture and language links', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const head = () => v.page.evaluate(() => {
+    const meta = key => (document.querySelector(`meta[property="${key}"], meta[name="${key}"]`) || {}).content;
+    return {
+      title: document.title, description: meta('description'), ogTitle: meta('og:title'), ogDescription: meta('og:description'),
+      ogImage: meta('og:image'), ogUrl: meta('og:url'), ogType: meta('og:type'), locale: meta('og:locale'), card: meta('twitter:card'),
+      imageAlt: meta('og:image:alt'), width: meta('og:image:width'), height: meta('og:image:height'),
+      alternates: [...document.querySelectorAll('meta[property="og:locale:alternate"]')].map(m => m.content),
+      canonical: (document.querySelector('link[rel=canonical]') || {}).href,
+      hreflang: Object.fromEntries([...document.querySelectorAll('link[rel=alternate][hreflang]')].map(l => [l.hreflang, l.href])),
+    };
+  });
+  const pt = await head();
+  expect(pt.title === TEXT.pt.docTitle && pt.description === TEXT.pt.docDescription, 'Portuguese title or description differs from the text table');
+  expect(/app de treino e dieta/.test(pt.title) && pt.description.length >= 70 && pt.description.length <= 200, `title or description off: ${pt.title} / ${pt.description.length} chars`);
+  expect(pt.ogTitle === pt.title && pt.ogDescription && pt.ogType === 'website' && pt.ogUrl === SITE + '/', `share tags missing: ${JSON.stringify(pt)}`);
+  expect(pt.ogImage === SITE + '/assets/img/compartilhar.jpg' && pt.width === '1200' && pt.height === '630' && pt.imageAlt, `share picture tags: ${pt.ogImage} ${pt.width}x${pt.height}`);
+  expect(pt.card === 'summary_large_image' && pt.locale === 'pt_BR' && pt.alternates.includes('en_US'), 'large card or locales missing');
+  expect(pt.canonical === SITE + '/', `canonical is ${pt.canonical}`);
+  expect(pt.hreflang['pt-BR'] === SITE + '/' && pt.hreflang.en === SITE + '/?lang=en' && pt.hreflang['x-default'] === SITE + '/', `language links: ${JSON.stringify(pt.hreflang)}`);
+  const picture = await v.page.evaluate(async () => {
+    const img = new Image(); img.src = '/assets/img/compartilhar.jpg'; await img.decode();
+    return [img.naturalWidth, img.naturalHeight, (await (await fetch('/assets/img/compartilhar.jpg')).blob()).size];
+  });
+  expect(picture[0] === 1200 && picture[1] === 630 && picture[2] < 300000, `share picture is ${picture.join(' x ')} bytes`);
+  await v.page.goto(base + '/?lang=en');
+  const en = await head();
+  expect(en.title === TEXT.en.docTitle && en.description === TEXT.en.docDescription && en.ogTitle === en.title, `English title: ${en.title}`);
+  expect(en.canonical === SITE + '/?lang=en' && en.ogUrl === SITE + '/?lang=en', `English canonical is ${en.canonical}`);
+  await v.close();
+});
+
+await check('the sitemap lists the public pages, robots points to it, and link pages stay out of search', async () => {
+  const get = async url => { const r = await fetch(base + url); return { status: r.status, text: await r.text() }; };
+  const robots = await get('/robots.txt');
+  expect(robots.status === 200 && robots.text.includes(`Sitemap: ${SITE}/sitemap.xml`), 'robots.txt does not point to the sitemap');
+  expect(!/Disallow:\s*\/\s*$/m.test(robots.text), 'robots.txt blocks the whole site');
+  const sitemap = await get('/sitemap.xml');
+  const listed = [...sitemap.text.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+  expect(sitemap.status === 200 && listed.includes(SITE + '/') && listed.includes(SITE + '/lista/privacidade/'), `sitemap lists ${listed}`);
+  expect(sitemap.text.includes(`hreflang="en" href="${SITE}/?lang=en"`), 'sitemap has no English alternate');
+  for (const page of [...Object.keys(SHORT_LINKS), 'lista', 'lista/sair']) {
+    expect(!listed.some(url => url.startsWith(`${SITE}/${page}/`) && !url.includes('privacidade')), `sitemap lists /${page}/`);
+    const html = fs.readFileSync(path.join(ROOT, page, 'index.html'), 'utf8');
+    expect(/<meta name="robots" content="noindex/.test(html), `/${page}/ can show up in search`);
+  }
+});
+
+await check('the app and FAQ details for Google match the visible page, in both languages', async () => {
+  const v = await visitor();
+  for (const lang of ['pt', 'en']) {
+    await v.page.goto(base + (lang === 'en' ? '/?lang=en' : '/'));
+    const { data, faq } = await v.page.evaluate(() => ({
+      data: [...document.querySelectorAll('script[type="application/ld+json"]')].map(el => JSON.parse(el.textContent)),
+      faq: [...document.querySelectorAll('#perguntas details')].map(d => [d.querySelector('summary').textContent, d.querySelector('p').textContent]),
+    }));
+    const nodes = data.flatMap(d => d['@graph'] || [d]);
+    const byType = type => nodes.find(n => n['@type'] === type);
+    const app = byType('MobileApplication'), page = byType('FAQPage');
+    expect(byType('Organization') && byType('WebSite'), `${lang}: no Organization or WebSite`);
+    expect(app && app.name === 'Kilo' && app.operatingSystem === 'iOS' && app.applicationCategory === 'HealthApplication', `${lang}: app details ${JSON.stringify(app)}`);
+    expect(app.offers && app.offers.price === '0' && app.offers.priceCurrency === 'BRL', `${lang}: app price`);
+    expect(!('aggregateRating' in app) && !('review' in app), `${lang}: made-up ratings`);
+    expect(page && page.mainEntity.length === faq.length, `${lang}: FAQ details have ${page && page.mainEntity.length} questions, page has ${faq.length}`);
+    page.mainEntity.forEach((q, i) => {
+      expect(q['@type'] === 'Question' && q.name === faq[i][0] && q.acceptedAnswer.text === faq[i][1], `${lang}: question ${i + 1} differs from the page`);
+    });
+    expect(page.inLanguage === (lang === 'en' ? 'en' : 'pt-BR'), `${lang}: FAQ language is ${page.inLanguage}`);
+  }
+  await v.close();
 });
 
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {

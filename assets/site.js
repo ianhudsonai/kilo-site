@@ -182,6 +182,20 @@
     document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
     document.title = t.docTitle;
     document.querySelector('meta[name=description]').setAttribute('content', t.docDescription);
+    // For Google, which runs this script: the English page is its own address, with its own words and FAQ details.
+    var here = 'https://kiloapp.com.br/' + (lang === 'en' ? '?lang=en' : '');
+    document.querySelector('link[rel=canonical]').href = here;
+    document.querySelector('meta[property="og:url"]').content = here;
+    document.querySelector('meta[property="og:title"]').content = t.docTitle;
+    document.querySelector('meta[property="og:description"]').content = t.docDescription;
+    var ld = JSON.parse(document.getElementById('ld').textContent);
+    ld['@graph'].forEach(function (node) {
+      if (node['@type'] === 'MobileApplication') node.description = t.docDescription;
+      if (node['@type'] !== 'FAQPage') return;
+      node.inLanguage = document.documentElement.lang;
+      node.mainEntity.forEach(function (q, i) { q.name = t['faq' + (i + 1) + 'Q']; q.acceptedAnswer.text = t['faq' + (i + 1) + 'A']; });
+    });
+    document.getElementById('ld').textContent = JSON.stringify(ld);
     each('[data-t]', function (el) { el.textContent = t[el.getAttribute('data-t')]; });
     each('[data-t-placeholder]', function (el) { el.placeholder = t[el.getAttribute('data-t-placeholder')]; });
     each('[data-t-alt]', function (el) { el.alt = t[el.getAttribute('data-t-alt')]; });
