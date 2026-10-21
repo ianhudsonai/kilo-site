@@ -79,6 +79,7 @@
       qrTitle: 'Abra no celular',
       qrText: 'Aponte a câmera do celular para entrar na lista por lá.',
       disclaimer: 'O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.',
+      trademark: 'Apple e iPhone são marcas da Apple Inc., registradas nos EUA e em outros países.',
       invalid: 'Confira o e-mail. Parece que falta alguma coisa.',
       busy: 'Muita gente entrando agora. Tente de novo em alguns minutos.',
       failed: 'Não deu para enviar. Confira sua internet e tente de novo.',
@@ -159,6 +160,7 @@
       qrTitle: 'Open it on your phone',
       qrText: 'Point your phone\'s camera here to join the list from there.',
       disclaimer: 'Kilo is a tracking tool and does not replace advice from a doctor or dietitian.',
+      trademark: 'Apple and iPhone are trademarks of Apple Inc., registered in the U.S. and other countries.',
       invalid: 'Check the email. It looks like something is missing.',
       busy: 'Lots of people are joining right now. Try again in a few minutes.',
       failed: 'Could not send it. Check your connection and try again.',
@@ -311,16 +313,12 @@
     });
   });
 
-  // The hero phone starts facing away and spins round once it is on screen (CSS .ready / .turned). Without JavaScript,
-  // or with reduce motion, it simply faces the visitor.
-  var turn = document.querySelector('.phone-turn');
-  if (!still && watch) {
-    turn.classList.add('ready');
-    var spin = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { turn.classList.add('turned'); spin.disconnect(); }
-    }, { threshold: 0.15 });
-    spin.observe(turn);
-  }
+  // The hero phone: a rendered orange iPhone that turns from its back to its front once, when it comes on screen. The video
+  // carries its see-through edge as a grey picture under the colour one, and a small WebGL shader joins the two (an
+  // ordinary video has no transparency). The still of the last frame is the page's own picture: it shows without
+  // JavaScript, WebGL or motion, while the video loads, and again once it ends.
+  var turnBox = document.querySelector('.phone-3d');
+  if (turnBox && !still && watch) playTurn(turnBox);
 
   // Sections slide in gently the first time they come into view.
   if (!still && watch) {
@@ -394,4 +392,139 @@
   }
 
   apply();
+  function playTurn(box) {
+    var canvas = document.createElement('canvas');
+    var gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
+    if (!gl) return;
+    var video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('muted', '');
+    video.preload = 'none';
+    // H.264 first: smaller, and decoded in hardware on iPhones. A browser without it (open-source Chromium) takes the VP9 copy.
+    [['mp4', 'video/mp4; codecs="avc1.64002A"'], ['webm', 'video/webm; codecs="vp9"']].forEach(function (kind) {
+      if (!video.canPlayType(kind[1])) return;
+      var source = document.createElement('source');
+      source.src = box.getAttribute('data-turn') + '.' + kind[0];
+      source.type = kind[1];
+      video.appendChild(source);
+    });
+    if (!video.lastChild) return;
+    canvas.className = 'phone-anim';
+    canvas.setAttribute('aria-hidden', 'true');
+    // While the video loads, the first frame (the phone's back) stands in, so the phone never vanishes.
+    var first = document.createElement('img');
+    first.className = 'phone-first';
+    first.alt = '';
+    first.src = box.getAttribute('data-turn') + '-first.webp';
+    // iPhones pause a video that isn't on the page, so it sits in a 1 px window inside the box.
+    var holder = document.createElement('div');
+    holder.className = 'phone-video';
+    holder.appendChild(video);
+    var done = false;
+    var shown = false;
+    var timer = 0;
+
+    function stop() {
+      if (done) return;
+      done = true;
+      seen.disconnect();
+      clearTimeout(timer);
+      box.classList.remove('waiting', 'turning');
+      [canvas, first, holder].forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+      video.pause();
+      while (video.firstChild) video.removeChild(video.firstChild);
+      video.removeAttribute('src');
+      video.load();
+      var lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+    }
+    function show() {
+      if (done || shown) return;
+      shown = true;
+      if (!setUp()) { stop(); return; }
+      draw();
+      box.appendChild(canvas);
+      if (first.parentNode) first.parentNode.removeChild(first);
+      box.classList.add('turning');
+      box.classList.remove('waiting');
+      // However the video behaves from here, the still is back within the turn's length and a little more.
+      clearTimeout(timer);
+      timer = setTimeout(stop, ((video.duration || 2) + 1.5) * 1000);
+      loop();
+    }
+    function start() {
+      // The back's picture started loading with the page; the still hides only once it is there to cover for it.
+      var cover = function () { if (!done && !shown) box.classList.add('waiting'); };
+      if (first.complete && first.naturalWidth) cover(); else first.addEventListener('load', cover);
+      box.appendChild(first);
+      box.appendChild(holder);
+      video.preload = 'auto';
+      // Slow to start is not worth the wait: after 3 s the still stays and nothing turns.
+      timer = setTimeout(stop, 3000);
+      video.addEventListener('playing', show);
+      video.addEventListener('ended', function () { draw(); stop(); });
+      video.addEventListener('pause', function () { if (!video.ended) stop(); });
+      video.addEventListener('error', stop);
+      video.lastChild.addEventListener('error', stop);
+      video.load();
+      var playing = video.play();
+      if (playing && playing.catch) playing.catch(stop);
+    }
+    // Starts the first time the phone is on screen. Scrolled away mid-turn, it skips to the still: no drawing nobody sees.
+    var started = false;
+    var seen = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) {
+        if (started) { seen.disconnect(); stop(); }
+        return;
+      }
+      if (started) return;
+      started = true;
+      start();
+    }, { threshold: 0.1 });
+    seen.observe(box);
+
+    function loop() {
+      if (done) return;
+      draw();
+      requestAnimationFrame(loop);
+    }
+    function setUp() {
+      if (!video.videoWidth) return false;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight / 2;
+      var program = gl.createProgram();
+      [[gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main() { uv = vec2(p.x + 1.0, 1.0 - p.y) * 0.5; gl_Position = vec4(p, 0.0, 1.0); }'],
+       [gl.FRAGMENT_SHADER, 'precision mediump float; uniform sampler2D t; varying vec2 uv; void main() { float a = texture2D(t, vec2(uv.x, 0.5 + uv.y * 0.5)).r; vec3 c = texture2D(t, vec2(uv.x, uv.y * 0.5)).rgb; gl_FragColor = vec4(min(c, vec3(a)), a); }']
+      ].forEach(function (part) {
+        var shader = gl.createShader(part[0]);
+        gl.shaderSource(shader, part[1]);
+        gl.compileShader(shader);
+        gl.attachShader(program, shader);
+      });
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
+      gl.useProgram(program);
+      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      var at = gl.getAttribLocation(program, 'p');
+      gl.enableVertexAttribArray(at);
+      gl.vertexAttribPointer(at, 2, gl.FLOAT, false, 0, 0);
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      return true;
+    }
+    function draw() {
+      if (done || video.readyState < 2) return;
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+  }
 })();

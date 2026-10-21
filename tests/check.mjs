@@ -20,7 +20,7 @@ function loadPlaywright() {
   try { return require('playwright'); } catch { return require(path.join(execSync('npm root -g').toString().trim(), 'playwright')); }
 }
 
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain', '.json': 'application/json' };
+const TYPES = { '.webm': 'video/webm', '.mp4': 'video/mp4', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain', '.json': 'application/json' };
 
 /** GitHub Pages' rules that matter here: a folder serves its index.html, and a folder without a trailing slash redirects to one. */
 function serve() {
@@ -103,9 +103,9 @@ await check('main page shows the headline, the phone and the email box in the fi
   expect((await h1.innerText()).includes('O app de treino e dieta que aprende com você'), `headline reads "${await h1.innerText()}"`);
   expect(await inFirstScreen(h1, v.page), 'headline is below the first screen');
   expect(await inFirstScreen(v.page.locator('form.join-form').first().getByLabel(/e-mail/i), v.page), 'email box is below the first screen');
-  // The "Aceitar sugestão" button sits 36% of the way down the screenshot; that row, not just the phone's top edge, must show.
+  // The "Aceitar sugestão" button sits 28% of the way down the phone picture (its screen is scrolled to the exercise); that row, not just the phone's top edge, must show.
   const shot = await v.page.getByRole('img', { name: /Aceitar sugestão/ }).boundingBox();
-  const buttonRow = shot && shot.y + shot.height * 0.36;
+  const buttonRow = shot && shot.y + shot.height * 0.28;
   expect(buttonRow && buttonRow < PHONE.height, `the Aceitar sugestão row in the screenshot is at ${Math.round(buttonRow)}px, below the first screen`);
   expect((await v.page.locator('form.join-form').count()) === 2, 'expected an email box in the hero and one in the closing block');
   expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
@@ -338,13 +338,17 @@ await check('every text and image description shows its own words in Portuguese 
   return `${seen.pt.size} keys`;
 });
 
-await check('the app screens below the hero show their top edge on a phone (only the hero screenshot is shifted)', async () => {
+await check('the app screens below the hero are whole phone pictures that load, each with its own description', async () => {
   const v = await visitor();
   await v.page.goto(base + '/');
-  const margins = await v.page.locator('#telas img').evaluateAll(els => els.map(el => getComputedStyle(el).marginTop));
-  expect(margins.every(m => m === '0px'), `screen margins are ${margins.join(', ')}`);
-  const hero = await v.page.locator('.hero .phone img').evaluate(el => getComputedStyle(el).marginTop);
-  expect(hero !== '0px', 'the hero screenshot lost its phone offset');
+  const shots = v.page.locator('#telas img.phone-shot');
+  expect((await shots.count()) === 3, `expected 3 phone pictures, found ${await shots.count()}`);
+  for (const shot of await shots.all()) {
+    await shot.scrollIntoViewIfNeeded();
+    await v.page.waitForFunction(el => el.complete && el.naturalWidth > 0, await shot.elementHandle(), { timeout: TIMEOUT })
+      .catch(async () => { throw new Error(`${await shot.getAttribute('src')} did not load`); });
+    expect(((await shot.getAttribute('alt')) || '').length > 20, `${await shot.getAttribute('src')} has no real description`);
+  }
   await v.close();
 });
 
@@ -441,18 +445,28 @@ await check('on the smallest phones the hero gorilla stays on screen and off the
   await v.close();
 });
 
-await check('the hero phone starts facing away, then spins round and settles slightly turned', async () => {
+await check('the hero phone turns from its back to its front once it is on screen, then rests as the still picture', async () => {
   const v = await visitor();
+  // Records every change to the phone box, so a turn that ends early (an error, a stall) shows as too short.
+  await v.page.addInitScript(() => {
+    window.turnLog = [];
+    // Watches the whole document from the first byte: the turn can start before DOMContentLoaded.
+    new MutationObserver(records => {
+      const box = records.map(r => r.target).find(el => el.classList && el.classList.contains('phone-3d'));
+      if (box) window.turnLog.push({ t: performance.now(), cls: box.className, first: !!box.querySelector('.phone-first'), canvas: !!box.querySelector('.phone-anim') });
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true });
+  });
   await v.page.goto(base + '/');
-  const turn = v.page.locator('.phone-turn');
-  expect(await turn.evaluate(el => el.classList.contains('ready')), 'the phone does not start facing away');
-  await v.page.waitForFunction(() => document.querySelector('.phone-turn').classList.contains('turned'), null, { timeout: TIMEOUT })
-    .catch(() => { throw new Error('the phone never turned round'); });
-  expect((await turn.evaluate(el => getComputedStyle(el).animationName)) === 'phone-spin', 'the phone turned without the spin');
-  await v.page.waitForTimeout(1600);
-  // Settled: facing the visitor (cos of the turn > 0) but still a little turned, not flat.
-  const m11 = await turn.evaluate(el => new DOMMatrix(getComputedStyle(el).transform).m11);
-  expect(m11 > 0.9 && m11 < 0.999, `the phone settled at m11 ${m11.toFixed(3)}, not slightly turned towards the visitor`);
+  await v.page.waitForFunction(() => window.turnLog.some(e => e.cls.includes('turning')) && window.turnLog.at(-1).cls === 'phone-3d', null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`the turn never ran to its end: ${JSON.stringify(await v.page.evaluate(() => window.turnLog))}`); });
+  const log = await v.page.evaluate(() => window.turnLog);
+  expect(log.some(e => e.cls.includes('waiting') && e.first), `the back of the phone did not stand in while the video loaded: ${JSON.stringify(log)}`);
+  const from = log.find(e => e.cls.includes('turning') && e.canvas).t;
+  const to = log.find(e => e.t > from && e.cls === 'phone-3d').t;
+  expect(to - from > 2200, `the turn lasted ${Math.round(to - from)} ms; the video is 2.7 s, so it stopped early`);
+  const still = await v.page.locator('.phone-3d .phone-still').evaluate(el => ({ opacity: getComputedStyle(el).opacity, left: el.parentNode.children.length }));
+  expect(still.opacity === '1' && still.left === 1, `after the turn the box holds ${still.left} elements and the still's opacity is ${still.opacity}`);
+  expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
   await v.close();
 });
 
@@ -535,16 +549,16 @@ await check('on a computer, the QR card slides in with the page tag, never cover
   await phone.close();
 });
 
-await check('with reduce motion on, the phone faces the visitor and nothing spins or slides', async () => {
+await check('with reduce motion on, the phone is a still picture and nothing turns or slides', async () => {
   const v = await visitor({ reducedMotion: 'reduce' });
   await v.page.goto(base + '/');
   await v.page.waitForTimeout(300);
   const state = await v.page.evaluate(() => ({
-    spin: getComputedStyle(document.querySelector('.phone-turn')).animationName,
-    transform: getComputedStyle(document.querySelector('.phone-turn')).transform,
+    video: !!document.querySelector('.phone-3d .phone-anim') || document.querySelector('.phone-3d').className !== 'phone-3d',
+    still: getComputedStyle(document.querySelector('.phone-3d .phone-still')).opacity,
     reveal: document.querySelectorAll('.reveal').length,
   }));
-  expect(state.spin === 'none' && state.transform === 'none', `the phone moves: ${JSON.stringify(state)}`);
+  expect(!state.video && state.still === '1', `the phone moves: ${JSON.stringify(state)}`);
   expect(state.reveal === 0, `${state.reveal} sections still slide in`);
   await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
   const bar = v.page.locator('.join-bar');
@@ -563,7 +577,7 @@ await check('every short-link tag has its QR code and is in the page\'s QR list'
   expect(listed.length === tags.length && tags.every(tag => listed.includes(tag)), `QR_TAGS ${listed} differs from the short links ${tags}`);
 });
 
-await check('printed, and without JavaScript, the whole page shows and the phone faces the visitor', async () => {
+await check('printed, and without JavaScript, the whole page shows and the phone is a still picture', async () => {
   const v = await visitor({ viewport: { width: 1280, height: 800 } });
   await v.page.goto(base + '/');
   await v.page.waitForTimeout(600);
@@ -574,12 +588,12 @@ await check('printed, and without JavaScript, the whole page shows and the phone
   const off = await visitor({ javaScriptEnabled: false });
   await off.page.goto(base + '/');
   const state = await off.page.evaluate(() => ({
-    turn: getComputedStyle(document.querySelector('.phone-turn')).transform,
+    turn: getComputedStyle(document.querySelector('.phone-3d .phone-still')).opacity,
     faint: [...document.querySelectorAll('main > section')].filter(el => getComputedStyle(el).opacity !== '1').length,
     card: getComputedStyle(document.querySelector('.qr-card')).display,
     bar: getComputedStyle(document.querySelector('.join-bar')).visibility,
   }));
-  expect(state.turn === 'none' && state.faint === 0 && state.card === 'none' && state.bar === 'hidden', `without JavaScript: ${JSON.stringify(state)}`);
+  expect(state.turn === '1' && state.faint === 0 && state.card === 'none' && state.bar === 'hidden', `without JavaScript: ${JSON.stringify(state)}`);
   await off.close();
 });
 
