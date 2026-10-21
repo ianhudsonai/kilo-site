@@ -1,0 +1,5 @@
+# Everything may be crawled. The short links and the leave page say noindex in their own HTML, which only works if robots can read them.
+User-agent: *
+Allow: /
+
+Sitemap: https://kiloapp.com.br/sitemap.xml
