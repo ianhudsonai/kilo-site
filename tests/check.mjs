@@ -245,7 +245,7 @@ await check('?lang=en and the English switch show the page in English, and a joi
   await w.page.goto(base + '/');
   await w.page.getByRole('button', { name: 'English' }).click();
   expect((await w.page.getByRole('heading', { level: 1 }).innerText()).includes('learns from you'), 'switch did not change the headline');
-  for (const text of ['Be one of the first to use Kilo.', 'Waitlist privacy', 'Your email']) {
+  for (const text of ['Be one of the first to use Kilo.', 'Site and waitlist privacy', 'Your email']) {
     expect((await w.page.getByText(text, { exact: true }).count()) > 0, `"${text}" missing after switching to English`);
   }
   await w.page.getByRole('button', { name: 'Português' }).click();
@@ -294,7 +294,7 @@ await check('six extras, the privacy promise and the six-question FAQ are on the
   const v = await visitor();
   await v.page.goto(base + '/');
   expect((await v.page.locator('section#extras li').count()) === 6, `expected 6 extras, saw ${await v.page.locator('section#extras li').count()}`);
-  await v.page.getByRole('heading', { name: 'Sem anúncios, sem rastreamento' }).waitFor();
+  await v.page.getByRole('heading', { name: 'No app: sem anúncios, sem rastreamento' }).waitFor();
   const questions = v.page.locator('section#perguntas summary');
   expect((await questions.count()) === 6, `expected 6 questions, saw ${await questions.count()}`);
   const android = v.page.locator('section#perguntas details', { hasText: 'Tem para Android?' });
@@ -1028,8 +1028,25 @@ await check('the calculator fits a small phone in light and dark mode, and says 
 
 // The counter is off until ian approves the privacy line: then site.js gets the two values from the Umami tracking code.
 const COUNTER_OFF = "var COUNTER = { src: '', id: '' };";
-/** Turns the counter on for this page and fakes Umami's script, which records what the page counts in window.counted. */
-async function withCounter(page, script = 'window.umami = { track: function (name, data) { (window.counted = window.counted || []).push([name, data || null]); } };') {
+// A stand-in for Umami's script that behaves like it where privacy is at stake: it sends a page view at load and on each
+// address change (with the address before it as referrer), passes every send through the page's before-send hook, and
+// records what would leave in window.sentPayloads (and the page's events in window.counted).
+const FAKE_UMAMI = `(function () {
+  var me = document.currentScript, hook = window[me.dataset.beforeSend], last = location.href;
+  window.sentPayloads = [];
+  function send(payload) { payload.website = me.dataset.websiteId; var kept = hook ? hook('event', payload) : payload; if (kept) window.sentPayloads.push(kept); }
+  send({ url: location.href, referrer: document.referrer, title: document.title });
+  ['pushState', 'replaceState'].forEach(function (name) {
+    var original = history[name];
+    history[name] = function () { original.apply(history, arguments); if (location.href !== last) { send({ url: location.href, referrer: last }); last = location.href; } };
+  });
+  window.umami = { track: function (name, data) {
+    (window.counted = window.counted || []).push([name, data || null]);
+    send({ url: location.href, referrer: document.referrer, name: name, data: data });
+  } };
+})();`;
+/** Turns the counter on for this page and serves `script` (the stand-in above, by default) as Umami's. */
+async function withCounter(page, script = FAKE_UMAMI) {
   const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
   expect(js.includes(COUNTER_OFF), 'site.js has no switched-off counter line');
   await page.route(base + '/assets/site.js', route => route.fulfill({ contentType: 'text/javascript',
@@ -1053,9 +1070,6 @@ await check('when switched on, the counter loads cookie-free from Umami and coun
   const tag = await v.page.locator('script[data-website-id]').evaluate(el => ({
     src: el.src, id: el.dataset.websiteId, domains: el.dataset.domains, dnt: el.dataset.doNotTrack, before: el.dataset.beforeSend, defer: el.defer }));
   expect(tag.src === 'https://cloud.umami.is/script.js' && tag.id === '00000000-test' && tag.domains === 'kiloapp.com.br' && tag.dnt === 'true' && tag.defer, `script tag ${JSON.stringify(tag)}`);
-  // Only the origem and lang tags of the address are counted, never anything else in it.
-  const url = await v.page.evaluate(name => window[name]('event', { url: '/?origem=ig-treino&t=segredo&lang=en', website: 'x' }).url, tag.before);
-  expect(url === '/?origem=ig-treino&lang=en', `the counted address is ${url}`);
   await v.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
   await join(v.page, 'nao-conta@exemplo.com');
   await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
@@ -1092,6 +1106,34 @@ await check('when switched on, the counter loads cookie-free from Umami and coun
     .catch(async () => { throw new Error(`QR card: ${JSON.stringify(await d.page.evaluate(() => window.counted))}`); });
   expect(await d.page.evaluate(() => window.counted.filter(c => c[0] === 'qr-mostrado').length === 1), 'the QR card showing is not counted once');
   await d.close();
+});
+
+await check('the counter sends only the origem and lang tags of any address, never click ids, emails or the other site\'s path', async () => {
+  const v = await visitor();
+  await withCounter(v.page);
+  await v.page.goto(base + '/?origem=ig-treino&fbclid=clique123&utm_source=ig&email=ana%40exemplo.com', { referer: 'https://l.instagram.com/?u=perfil-secreto&e=xyz' });
+  await v.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  // The English switch changes the address, which Umami counts as a new page view with the old address as referrer.
+  await v.page.locator('#lang-toggle').click();
+  await v.page.locator('#lang-toggle').click();
+  await join(v.page, 'nao-conta@exemplo.com');
+  await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  const sent = await v.page.evaluate(() => window.sentPayloads);
+  const all = JSON.stringify(sent);
+  expect(sent.length >= 4, `sends: ${all}`);
+  for (const secret of ['clique123', 'fbclid', 'utm_', 'exemplo', '%40', '@', 'perfil-secreto', 'xyz']) expect(!all.includes(secret), `"${secret}" reached the counter: ${all}`);
+  expect(sent[0].url === base + '/?origem=ig-treino' && sent[0].referrer === 'https://l.instagram.com/', `first page view: ${JSON.stringify(sent[0])}`);
+  expect(sent.some(p => p.url === base + '/?origem=ig-treino&lang=en' && p.referrer === base + '/?origem=ig-treino'), `language switch: ${all}`);
+  await v.close();
+  // A browser sending Global Privacy Control is not counted at all.
+  const g = await visitor();
+  await g.page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true }));
+  await withCounter(g.page);
+  await g.page.goto(base + '/?origem=ig-treino');
+  await g.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  await g.page.locator('#lang-toggle').click();
+  expect((await g.page.evaluate(() => window.sentPayloads.length)) === 0, 'a Global Privacy Control visit was counted');
+  await g.close();
 });
 
 await check('with the counter blocked or broken, the page and sign-up still work', async () => {

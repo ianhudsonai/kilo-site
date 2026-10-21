@@ -71,7 +71,9 @@ A free calculator for a daily calorie and macro target, in Portuguese and Englis
 
 `assets/site.js` can load Umami Cloud, a cookie-free counter with its data in the EU region. It stays off while `COUNTER` holds empty values. Switch it on only together with its section on the waitlist privacy page, once ian has approved that text: paste the `src` and `data-website-id` from Umami's tracking code into `COUNTER`.
 
-It counts pages, sources (only the `origem` and `lang` parts of the address), scroll depth (`rolagem`), taps on the join buttons (`entrar-na-lista`), joins (`entrou`) and the QR card (`qr-mostrado`, `qr-fechado`). It never counts an email. If the counter is blocked or broken, the page works the same.
+It counts pages, sources (only the `origem` and `lang` parts of the page address and of the address before it; another site's address is cut to its name), scroll depth (`rolagem`), taps on the join buttons (`entrar-na-lista`), joins (`entrou`) and the QR card (`qr-mostrado`, `qr-fechado`). It never counts an email. Browsers sending Do Not Track or Global Privacy Control are not counted. The English switch changes the address, so Umami counts it as one more page view. If the counter is blocked or broken, the page works the same.
+
+The main page's promise heading ("No app: sem anúncios, sem rastreamento"), its data FAQ answer and its footer link mention the site's counting, and the privacy page has a section on it. Keep all of these in step with the counter.
 
 ## Checking the site
 
