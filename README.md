@@ -75,9 +75,13 @@ It counts pages, sources (only the `origem` and `lang` parts of the page address
 
 The main page's promise heading ("No app: sem anúncios, sem rastreamento"), its data FAQ answer and its footer link mention the site's counting, and the privacy page has a section on it. Keep all of these in step with the counter.
 
+## Google Search Console
+
+`index.html` carries the `google-site-verification` line from ian's Search Console (kiloapp.com.br, URL prefix). Google checks now and then that it is still there, so keep it; a check fails if it goes.
+
 ## App icon
 
-The logo in every page header, the browser tab icon (`favicon.ico`), the iPhone home-screen icon (`apple-touch-icon.png`) and the link-preview picture all use the app's icon, `apps/mobile/assets/images/cargax-icon.png` in fitness-app, shrunk to `assets/img/icone.webp`. The `.mark` boxes keep a K inside for browsers without CSS. If the app icon changes, remake these three files from it and the link-preview picture from `tools/share-card.html`.
+The logo in every page header, the browser tab icon (`favicon.ico`), the iPhone home-screen icon (`apple-touch-icon.png`) and the link-preview picture all use the app's icon, `apps/mobile/assets/images/cargax-icon.png` in fitness-app, shrunk to `assets/img/icone.webp`. The `.mark` boxes keep a K inside for browsers without CSS. If the app icon changes, remake these three files from it and the link-preview picture from `tools/share-card.html`. The hand-written pages link the icons with `?v=2` so browsers that remembered the site as icon-less fetch them again; bump the number when the icon changes.
 
 ## Checking the site
 

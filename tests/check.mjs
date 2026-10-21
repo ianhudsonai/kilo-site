@@ -604,6 +604,8 @@ const SITE = 'https://kiloapp.com.br';
 await check('Google and link previews get a title, description, share picture and language links', async () => {
   const v = await visitor();
   await v.page.goto(base + '/');
+  // Search Console stops working if its verification line goes.
+  expect(await v.page.locator('meta[name="google-site-verification"][content="JB0icznXjMPfvIVYDGBB1DTZ3tq9r_tYloRaIn0Gd7U"]').count() === 1, 'the Search Console verification line is missing');
   const head = () => v.page.evaluate(() => {
     const meta = key => (document.querySelector(`meta[property="${key}"], meta[name="${key}"]`) || {}).content;
     return {
