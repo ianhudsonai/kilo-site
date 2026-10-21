@@ -1,4 +1,4 @@
-/* The Google pages (foods now; calculator and exercises later): plain reading pages in the landing page's colours. */
+/* The Google pages (foods, exercises, the calculator): plain reading pages in the landing page's colours. */
 :root {
   --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE;
   --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --ink: #20231F; --on-ink: #F5F4EE; --field: #7D827A;
@@ -34,6 +34,9 @@ h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8
 .macros th, .macros td { padding: 10px 0; border-top: 1px solid var(--line); text-align: left; font-weight: 500; }
 .macros td { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .na { color: var(--muted); font-size: 0.9rem; margin: 10px 0 0; }
+/* An exercise's how-to tip. */
+.how p { margin: 0; }
+.how .na { margin: 12px 0 0; }
 .source { color: var(--muted); font-size: 0.9rem; margin: 0 0 28px; }
 
 /* The waitlist box, tagged for the page type, opening the main page's form. */
