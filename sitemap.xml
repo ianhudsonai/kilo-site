@@ -28,6 +28,8 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://kiloapp.com.br/calculadora/?lang=en"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kiloapp.com.br/calculadora/"/>
   </url>
+  <url><loc>https://kiloapp.com.br/comparar/myfitnesspal/</loc></url>
+  <url><loc>https://kiloapp.com.br/comparar/fatsecret/</loc></url>
   <!-- alimentos: written by tools/build-pages.mjs -->
   <url><loc>https://kiloapp.com.br/alimentos/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/arroz-integral-cozido/</loc></url>

@@ -852,6 +852,49 @@ await check('an exercise page reads well on a phone in light and dark mode, and 
   }
 });
 
+// The comparison pages (/comparar/): hand-written, every fact about the other app sourced and dated.
+const COMPARE = ['myfitnesspal', 'fatsecret'];
+
+await check('each comparison page shows its check date and sources, has its own title and description, and the seo-compare box', async () => {
+  const titles = new Set(), descriptions = new Set();
+  const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+  for (const app of COMPARE) {
+    const html = fs.readFileSync(path.join(ROOT, 'comparar', app, 'index.html'), 'utf8');
+    const title = html.match(/<title>([^<]+)<\/title>/)[1], description = html.match(/<meta name="description" content="([^"]+)">/)[1];
+    expect(title.length <= 60 && description.length <= 160 && !titles.has(title) && !descriptions.has(description), `/comparar/${app}/ title or description`);
+    titles.add(title); descriptions.add(description);
+    expect(html.includes(`<link rel="canonical" href="${SITE}/comparar/${app}/">`) && sitemap.includes(`<loc>${SITE}/comparar/${app}/</loc>`), `/comparar/${app}/ canonical or sitemap`);
+    // The date the facts were checked shows on the page, and every source linked there is the one recorded in the comment.
+    const source = html.match(/<p class="source">([\s\S]*?)<\/p>/)[1];
+    expect(/conferidos em <time datetime="\d{4}-\d{2}-\d{2}">[^<]+<\/time>/.test(source), `/comparar/${app}/ shows no check date`);
+    const comment = html.match(/<!--([\s\S]*?)-->/)[1];
+    const links = [...source.matchAll(/href="(https:[^"]+)"/g)].map(m => m[1]);
+    expect(links.length > 0 && links.every(link => comment.includes(link)), `/comparar/${app}/ links a source the comment does not record`);
+    expect(/O Kilo ainda não foi lançado/.test(html) && /não tem ligação com/.test(html), `/comparar/${app}/ must say Kilo is not out yet and is not linked to the other app`);
+    expect(html.includes('href="/?origem=seo-compare"'), `/comparar/${app}/ lacks the seo-compare box`);
+    for (const [, link] of html.matchAll(/href="(\/[^"#?]+)"/g)) expect(link.startsWith('/assets/') || fs.existsSync(path.join(ROOT, link, 'index.html')), `/comparar/${app}/ links to missing ${link}`);
+  }
+  expect(/^[a-z0-9][a-z0-9-]{0,39}$/.test('seo-compare'), 'seo-compare is not a valid tag');
+});
+
+await check('the comparison pages fit a small phone in light and dark mode, table included', async () => {
+  for (const colorScheme of ['light', 'dark']) {
+    const v = await visitor({ colorScheme, viewport: { width: 320, height: 640 } });
+    for (const app of COMPARE) {
+      await v.page.goto(base + `/comparar/${app}/`);
+      const wide = await v.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(wide <= 0, `/comparar/${app}/ (${colorScheme}) scrolls sideways by ${wide}px`);
+      expect(await v.page.locator('table.compare tbody tr').count() >= 5, `/comparar/${app}/ table`);
+    }
+    if (colorScheme === 'light') {
+      await v.page.getByRole('link', { name: 'Entrar na lista de espera' }).click();
+      await v.page.waitForURL(base + '/?origem=seo-compare');
+    }
+    expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
+    await v.close();
+  }
+});
+
 // The calculator (/calculadora/): the app's goal maths, run in the browser. data/goal-samples.json holds the app's own answers.
 const GOAL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/goal-samples.json'), 'utf8'));
 const CALC_TEXT = (() => {
