@@ -38,10 +38,19 @@ The "Quanto custaria tudo isso?" block shows real Brazilian prices with no app o
 
 One page per TACO food the app ships (591), plus an index by category, for people who search a food's calories. Each shows kcal and macros per 100 g, the table's credit line and a box that opens the main page's form tagged `seo-food`. The pages are generated; don't edit them by hand.
 
-- `data/taco.json` is a copy of the app's own TACO data, with the app commit it came from. When the app's food data changes, rerun `node tools/copy-taco-data.mjs /path/to/fitness-app` from a clean app checkout, then `node tools/build-food-pages.mjs`, which rebuilds `/alimentos/` and the food part of `sitemap.xml`.
+- `data/taco.json` is a copy of the app's own TACO data, with the app commit it came from. When the app's food data changes, rerun `node tools/copy-taco-data.mjs /path/to/fitness-app` from a clean app checkout, then `node tools/build-pages.mjs`, which rebuilds `/alimentos/`, `/exercicios/` and their parts of `sitemap.xml`.
 - TACO's terms (4th edition, NEPA–UNICAMP, p. ii): "Tabela Brasileira de Composição de Alimentos – TACO é uma publicação do NEPA. É permitida a reprodução total ou parcial do material, desde que seja citada a fonte." So every page cites it; keep the credit line.
 - Names read as people say them (`plain()` in the builder); the few the rule can't fix are named by hand in `SAID`. An address never changes food: a name clash stops the build.
 - Where the table marks a macro "NA" (oils, spirits), the page shows 0 like the app, with a note saying so.
+
+## Exercise pages (/exercicios/)
+
+One page per exercise in the app's library (294), plus an index by muscle group, for people who search how to do an exercise. Each shows the Portuguese name, the muscle group, the English name, the app's own how-to tip with a safety line, and a box that opens the main page's form tagged `seo-exercise`. The pages are generated; don't edit them by hand.
+
+- `data/exercises.json` is a copy of the app's exercise library (its database migrations 00031 to 00039, checked against the tips bundled in the app), with the app commit it came from. When the library changes, rerun `node tools/copy-exercise-data.mjs /path/to/fitness-app` from a clean app checkout, then `node tools/build-pages.mjs`.
+- An exercise's address never changes, even if the app renames it: `data/exercise-addresses.json` keeps the address each app exercise (by its app slug) was first given. The builder adds new exercises to it; commit it with the pages.
+- Source and licence: the library and its tips were written for Kilo ("written fresh; no third-party data", migration 00031), so no outside credit is needed. The tips are general technique reminders, not a prescription, and every page says so.
+- The box claims only what the approved App Store text says: the suggested weight for the next set, the last numbers filled in, and each exercise's history and chart.
 
 ## Calorie calculator (/calculadora/)
 

@@ -674,7 +674,7 @@ await check('the app and FAQ details for Google match the visible page, in both 
   await v.close();
 });
 
-// The TACO food pages, built by tools/build-food-pages.mjs from data/taco.json (the app's own food data, copied in).
+// The TACO food pages, built by tools/build-pages.mjs from data/taco.json (the app's own food data, copied in).
 const TACO = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/taco.json'), 'utf8'));
 const FOOD_DIR = path.join(ROOT, 'alimentos');
 const foodPages = fs.readdirSync(FOOD_DIR, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name);
@@ -753,6 +753,99 @@ await check('a food page reads well on a phone in light and dark mode, and its b
       await join(v.page, 'ana@exemplo.com');
       await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
       expect(v.sent.length === 1 && v.sent[0].p_origem === 'seo-food', `join sent ${JSON.stringify(v.sent)}`);
+    }
+    expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
+    await v.close();
+  }
+});
+
+// The exercise pages, built by tools/build-pages.mjs from data/exercises.json (the app's own exercise library, copied in).
+const LIBRARY = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/exercises.json'), 'utf8'));
+const EXERCISE_DIR = path.join(ROOT, 'exercicios');
+const exercisePages = fs.readdirSync(EXERCISE_DIR, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name);
+const ADDRESSES = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/exercise-addresses.json'), 'utf8'));
+const unescape = text => text.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+await check('every exercise in the app has one page with the app\'s name and tip, its own title and description, and the seo-exercise box', async () => {
+  expect(LIBRARY.exercises.length === 294 && exercisePages.length === LIBRARY.exercises.length, `${LIBRARY.exercises.length} exercises, ${exercisePages.length} pages`);
+  expect(/written fresh; no third-party data/.test(LIBRARY.source.licence) && /^[0-9a-f]{40}$/.test(LIBRARY.source.commit), 'the copied library lacks its source or licence note');
+  const titles = new Set(), descriptions = new Set(), seen = new Set();
+  for (const slug of exercisePages) {
+    const html = fs.readFileSync(path.join(EXERCISE_DIR, slug, 'index.html'), 'utf8');
+    const name = unescape(html.match(/<h1>([^<]+)<\/h1>/)[1]);
+    const exercise = LIBRARY.exercises.find(e => e.namePt === name);
+    expect(exercise && !seen.has(exercise.slug), `/exercicios/${slug}/ does not match exactly one exercise (${name})`);
+    seen.add(exercise.slug);
+    expect(unescape(html.match(/<p data-tip>([^<]+)<\/p>/)[1]) === exercise.tipPt, `/exercicios/${slug}/ tip differs from the app`);
+    // The English name shows unless the Portuguese name already says it ("Burpee").
+    const english = exercise.namePt.toLowerCase().includes(exercise.nameEn.toLowerCase()) ? null : exercise.nameEn;
+    expect(english ? html.includes(`<span lang="en">${english.replace(/&/g, '&amp;')}</span>`) : !html.includes('Em inglês'), `/exercicios/${slug}/ English name`);
+    expect(slug === ADDRESSES[exercise.slug], `/exercicios/${slug}/ is not the address kept for ${exercise.slug}`);
+    expect(html.includes('Feito um lado de cada vez.') === exercise.unilateral, `/exercicios/${slug}/ one-side note`);
+    const title = unescape(html.match(/<title>([^<]+)<\/title>/)[1]), description = unescape(html.match(/<meta name="description" content="([^"]+)">/)[1]);
+    expect(!titles.has(title) && !descriptions.has(description), `/exercicios/${slug}/ repeats a title or description`);
+    titles.add(title); descriptions.add(description);
+    expect(title.length <= 60 && title.startsWith(name) && description.length <= 160 && description.startsWith(`Como fazer ${name}`), `/exercicios/${slug}/ title or description: ${title} / ${description}`);
+    expect(html.includes(`<link rel="canonical" href="${SITE}/exercicios/${slug}/">`) && !/name="robots"/.test(html), `/exercicios/${slug}/ canonical or robots`);
+    expect(html.includes('href="/?origem=seo-exercise"') && html.includes('No Kilo, a carga da próxima série vem sugerida') && html.includes('<a class="brand" href="/">'), `/exercicios/${slug}/ lacks the tagged box or the link home`);
+    expect(html.includes('Dicas gerais de técnica, não uma prescrição. Comece leve e pare se sentir dor.'), `/exercicios/${slug}/ lacks the safety line`);
+    for (const [, link] of html.matchAll(/href="(\/(?:exercicios|alimentos)\/[^"#]*)/g)) expect(fs.existsSync(path.join(ROOT, link, 'index.html')), `/exercicios/${slug}/ links to missing ${link}`);
+  }
+  expect(seen.size === LIBRARY.exercises.length, 'some exercises have no page');
+  // The copy matches the app's own words; these were read off the app repo by hand (00031 and 00037).
+  const APP = [
+    ['barbell-bench-press', 'Supino Reto com Barra', 'Deite com os olhos sob a barra, pés firmes e escápulas juntas. Desça a barra até o meio do peito com os antebraços na vertical e empurre para cima e um pouco para trás. Use um auxiliar ou travas de segurança para a barra não prender você.'],
+    ['farmers-carry', 'Caminhada do Fazendeiro', 'Escolha pesos que você consiga carregar sem inclinar o corpo, fique ereto e caminhe com passos curtos e firmes. Mantenha os ombros para trás e a pegada forte; apoie os pesos no chão com a coluna reta.', "Farmer's Carry"],
+    ['deadlift', 'Levantamento Terra', 'Barra sobre o meio do pé, quadril para trás, coluna reta e barra junto às pernas. Empurre o chão, fique de pé e desça flexionando o quadril. Mantenha a coluna reta o tempo todo e comece leve até o movimento ficar fluido.'],
+  ];
+  for (const [slug, namePt, tipPt, nameEn] of APP) {
+    const exercise = LIBRARY.exercises.find(e => e.slug === slug);
+    expect(exercise && exercise.namePt === namePt && exercise.tipPt === tipPt && (!nameEn || exercise.nameEn === nameEn), `${slug} differs from the app: ${JSON.stringify(exercise)}`);
+  }
+  // An address, once given, stays: every exercise keeps one, and no two exercises share one.
+  expect(LIBRARY.exercises.every(e => ADDRESSES[e.slug]) && new Set(Object.values(ADDRESSES)).size === Object.keys(ADDRESSES).length, 'data/exercise-addresses.json misses an exercise or repeats an address');
+  expect(ADDRESSES['barbell-bench-press'] === 'supino-reto-com-barra' && ADDRESSES['farmers-carry'] === 'caminhada-do-fazendeiro', 'a kept address changed');
+  expect(/^[a-z0-9][a-z0-9-]{0,39}$/.test('seo-exercise'), 'seo-exercise is not a valid tag');
+  return `${exercisePages.length} pages, app commit ${LIBRARY.source.commit.slice(0, 7)}`;
+});
+
+await check('the exercise index lists every exercise by muscle group, and the sitemap lists them all', async () => {
+  const index = fs.readFileSync(path.join(EXERCISE_DIR, 'index.html'), 'utf8');
+  const linked = [...index.matchAll(/<li><a href="\/exercicios\/([^"/]+)\/">/g)].map(m => m[1]);
+  expect(linked.length === exercisePages.length && new Set(linked).size === linked.length && exercisePages.every(s => linked.includes(s)), `index links ${linked.length} exercises`);
+  for (const label of ['Peito', 'Costas', 'Ombros', 'Bíceps', 'Tríceps', 'Antebraços', 'Quadríceps', 'Posteriores de coxa', 'Glúteos', 'Panturrilhas', 'Core e abdômen', 'Cardio e outros']) {
+    expect(index.includes(`>${label}</h2>`), `index has no ${label} heading`);
+  }
+  const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+  const listed = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+  expect(listed.includes(SITE + '/exercicios/') && exercisePages.every(s => listed.includes(`${SITE}/exercicios/${s}/`)), 'sitemap misses exercise pages');
+  expect(new Set(listed).size === listed.length, 'sitemap repeats an address');
+  for (const page of ['index.html', 'calculadora/index.html', 'alimentos/index.html']) {
+    expect(fs.readFileSync(path.join(ROOT, page), 'utf8').includes('href="/exercicios/"'), `${page} does not link to the exercise pages`);
+  }
+});
+
+await check('an exercise page reads well on a phone in light and dark mode, and its box opens the form tagged seo-exercise', async () => {
+  const longest = LIBRARY.exercises.reduce((a, b) => (b.namePt.length > a.namePt.length ? b : a));
+  const longSlug = exercisePages.find(s => fs.readFileSync(path.join(EXERCISE_DIR, s, 'index.html'), 'utf8').includes(`<h1>${longest.namePt.replace(/&/g, '&amp;')}</h1>`));
+  for (const colorScheme of ['light', 'dark']) {
+    const v = await visitor({ colorScheme, viewport: { width: 360, height: 740 } });
+    for (const url of ['/exercicios/', '/exercicios/supino-reto-com-barra/', `/exercicios/${longSlug}/`]) {
+      await v.page.goto(base + url);
+      const wide = await v.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(wide <= 0, `${url} (${colorScheme}) scrolls sideways by ${wide}px`);
+    }
+    await v.page.goto(base + '/exercicios/supino-reto-com-barra/');
+    expect(await v.page.getByRole('heading', { level: 1 }).textContent() === 'Supino Reto com Barra', 'exercise heading');
+    expect((await v.page.locator('[data-muscle]').textContent()) === 'Peito', 'muscle on the page');
+    const bg = await v.page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(colorScheme === 'dark' ? bg === 'rgb(23, 26, 25)' : bg === 'rgb(245, 244, 238)', `${colorScheme} background ${bg}`);
+    if (colorScheme === 'light') {
+      await v.page.getByRole('link', { name: 'Entrar na lista de espera' }).click();
+      await v.page.waitForURL(base + '/?origem=seo-exercise');
+      await join(v.page, 'ana@exemplo.com');
+      await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+      expect(v.sent.length === 1 && v.sent[0].p_origem === 'seo-exercise', `join sent ${JSON.stringify(v.sent)}`);
     }
     expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
     await v.close();
