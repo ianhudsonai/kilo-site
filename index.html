@@ -2,47 +2,79 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>Kilo · Em breve · Coming soon</title>
-<meta name="description" content="Kilo, app de treinos e alimentação. Em breve para iPhone. Kilo, a workout and nutrition app. Coming soon to iPhone.">
-<style>
-  :root { --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE; --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; } }
-  * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { width: 100%; max-width: 560px; padding: 40px 16px; }
-  .mark { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 16px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 34px; }
-  h1 { font-size: 2.4rem; line-height: 1.1; margin: 20px 0 0; letter-spacing: -0.02em; }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin-top: 20px; }
-  h2 { font-size: 1.2rem; margin: 0 0 6px; }
-  p { margin: 6px 0; }
-  .muted { color: var(--muted); }
-  a { color: var(--link); font-weight: 600; }
-  footer { margin-top: 24px; font-size: 0.85rem; }
-  .cta { display: block; text-align: center; margin: 14px 0 12px; padding: 14px; border-radius: 12px; background: var(--accent); color: var(--on-accent); font-weight: 700; text-decoration: none; }
-</style>
+<title>Kilo: o app de treino e dieta que aprende com você</title>
+<meta name="description" content="O Kilo sugere a carga da próxima série e ajusta sua meta pelo seu progresso real. Treino e dieta no mesmo app, grátis e sem anúncios. Em breve no iPhone: entre na lista de espera.">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-<main>
-  <div class="mark" aria-hidden="true">K</div>
-  <h1>Kilo</h1>
+<div class="wrap">
+  <header class="top">
+    <a href="/" class="brand" aria-label="Kilo"><span class="mark" aria-hidden="true">K</span>Kilo</a>
+    <button type="button" class="lang" id="lang-toggle" lang="en">English</button>
+  </header>
 
-  <section id="pt-br" lang="pt-BR">
-    <h2>Em breve no iPhone</h2>
-    <p>Kilo é um app para registrar seus treinos e sua alimentação em um só lugar.</p>
-    <a class="cta" href="/lista/">Entrar na lista de espera</a>
-    <p class="muted">Dúvidas ou suporte: <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a></p>
-  </section>
+  <main>
+    <section class="hero" aria-labelledby="headline">
+      <div>
+        <p class="eyebrow" data-t="eyebrow">Em breve no iPhone · Grátis</p>
+        <h1 id="headline" data-t="headline">O app de treino e dieta que aprende com você.</h1>
+        <p class="lede" data-t="lede">O Kilo sugere a carga da próxima série e ajusta sua meta pelo seu progresso real. Você só aceita.</p>
+        <div class="join-box" data-join>
+          <form class="join-form" method="post" action="#" novalidate>
+            <label for="email-top" data-t="emailLabel">Seu e-mail</label>
+            <input type="email" id="email-top" name="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required placeholder="voce@exemplo.com" data-t-placeholder="placeholder" aria-describedby="status-top">
+            <div class="trap" aria-hidden="true"><label for="check-top">Não preencha</label><input type="text" id="check-top" name="website" tabindex="-1" autocomplete="off"></div>
+            <button type="submit" class="join" data-t="button">Entrar na lista de espera</button>
+            <p class="status" id="status-top" role="status" aria-live="polite"></p>
+            <p class="consent"><span data-t="consent">Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.</span> <a href="/lista/privacidade/" data-privacy data-t="privacy">Privacidade</a></p>
+          </form>
+          <div class="join-done" hidden tabindex="-1">
+            <h2 data-t="doneTitle">Pronto!</h2>
+            <p data-t="doneText">Você vai ser um dos primeiros a saber quando o Kilo chegar.</p>
+            <p class="small" data-t="doneLeave">Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.</p>
+          </div>
+        </div>
+      </div>
+      <div class="phone-stage">
+        <div class="phone">
+          <div class="screen"><img src="/assets/img/treino-aceitar-sugestao.webp" width="390" height="844" alt="Tela de treino do Kilo: o supino da última vez, 3 séries de 60 kg, e o botão Aceitar sugestão" data-t-alt="phoneAlt"></div>
+        </div>
+      </div>
+    </section>
 
-  <section id="en" lang="en">
-    <h2>Coming soon to iPhone</h2>
-    <p>Kilo is an app for tracking your workouts and what you eat, in one place.</p>
-    <a class="cta" href="/lista/?lang=en">Join the waitlist</a>
-    <p class="muted">Questions or support: <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a></p>
-  </section>
+    <section class="closing" aria-labelledby="closing-title">
+      <div>
+        <h2 id="closing-title" data-t="closingTitle">Seja um dos primeiros a usar o Kilo.</h2>
+        <p data-t="closingText">Avisamos por e-mail quando ele chegar ao iPhone. Um e-mail só, sem spam.</p>
+      </div>
+      <div class="join-box" data-join>
+        <form class="join-form" method="post" action="#" novalidate>
+          <label for="email-end" data-t="emailLabel">Seu e-mail</label>
+          <input type="email" id="email-end" name="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required placeholder="voce@exemplo.com" data-t-placeholder="placeholder" aria-describedby="status-end">
+          <div class="trap" aria-hidden="true"><label for="check-end">Não preencha</label><input type="text" id="check-end" name="website" tabindex="-1" autocomplete="off"></div>
+          <button type="submit" class="join" data-t="button">Entrar na lista de espera</button>
+          <p class="status" id="status-end" role="status" aria-live="polite"></p>
+          <p class="consent"><span data-t="consent">Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.</span> <a href="/lista/privacidade/" data-privacy data-t="privacy">Privacidade</a></p>
+        </form>
+        <div class="join-done" hidden tabindex="-1">
+          <h2 data-t="doneTitle">Pronto!</h2>
+          <p data-t="doneText">Você vai ser um dos primeiros a saber quando o Kilo chegar.</p>
+          <p class="small" data-t="doneLeave">Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.</p>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  <footer class="muted">© 2026 Kilo</footer>
-</main>
+  <footer>
+    <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a>
+    <a href="/lista/privacidade/" data-privacy data-t="privacyFooter">Privacidade da lista de espera</a>
+    <span>© 2026 Kilo</span>
+  </footer>
+</div>
+<script src="/lista/config.js"></script>
+<script src="/assets/site.js"></script>
 </body>
 </html>
