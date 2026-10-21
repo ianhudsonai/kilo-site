@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Kilo · Lista de espera</title>
+<meta name="description" content="Entre na lista de espera do Kilo, o app para registrar seus treinos e sua alimentação. Em breve no iPhone, grátis.">
+<meta name="referrer" content="no-referrer">
+<meta property="og:title" content="Kilo · Lista de espera">
+<meta property="og:description" content="Kilo é um app para registrar seus treinos e sua alimentação em um só lugar. Em breve no iPhone, grátis.">
+<style>
+  :root { --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE; --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --error: #A12B1F; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --error: #FF9B8C; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  main { width: 100%; max-width: 480px; padding: 32px 16px calc(32px + env(safe-area-inset-bottom)); }
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .mark { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 30px; text-decoration: none; }
+  .lang { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; padding: 6px 14px; cursor: pointer; }
+  h1 { font-size: 2.1rem; line-height: 1.12; margin: 22px 0 10px; letter-spacing: -0.02em; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.88rem; }
+  a { color: var(--link); font-weight: 600; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin-top: 22px; }
+  label { display: block; font-weight: 600; margin-bottom: 8px; }
+  input[type=email] { width: 100%; font: inherit; font-size: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); }
+  input[type=email]:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+  button.join { width: 100%; margin-top: 12px; font: inherit; font-weight: 700; font-size: 18px; padding: 15px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+  button.join:disabled { opacity: 0.6; cursor: default; }
+  .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .consent { margin-top: 12px; }
+  .status { margin-top: 10px; }
+  .status:empty { display: none; }
+  .status.error { color: var(--error); font-weight: 600; }
+  .done h2 { font-size: 1.3rem; margin: 0 0 6px; }
+  footer { margin-top: 24px; font-size: 0.85rem; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <a href="/" class="mark" aria-label="Kilo">K</a>
+    <button type="button" class="lang" id="lang-toggle" lang="en">English</button>
+  </div>
+
+  <h1 data-t="title">Entre na lista de espera do Kilo</h1>
+  <p data-t="pitch">Kilo é um app para registrar seus treinos e sua alimentação em um só lugar. Em breve no iPhone, grátis.</p>
+
+  <section id="form-card">
+    <form id="join" method="post" action="#" novalidate>
+      <label for="email" data-t="emailLabel">Seu e-mail</label>
+      <input type="email" id="email" autocomplete="email" aria-describedby="status" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required placeholder="voce@exemplo.com">
+      <div class="trap" aria-hidden="true">
+        <label for="kx-check">Não preencha</label>
+        <input type="text" id="kx-check" tabindex="-1" autocomplete="off">
+      </div>
+      <button type="submit" class="join" id="join-button" data-t="button">Entrar na lista de espera</button>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <p class="consent muted small"><span data-t="consent">Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.</span> <a href="/lista/privacidade/" id="privacy-link" data-t="privacy">Privacidade</a></p>
+    </form>
+  </section>
+
+  <section class="done" id="done" hidden tabindex="-1">
+    <h2 data-t="doneTitle">Pronto!</h2>
+    <p data-t="doneText">Você vai ser um dos primeiros a saber quando o Kilo chegar.</p>
+    <p class="muted small" data-t="doneLeave">Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.</p>
+  </section>
+
+  <footer class="muted"><span data-t="questions">Dúvidas:</span> <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a> · © 2026 Kilo</footer>
+</main>
+<script src="/lista/config.js"></script>
+<script>
+(function () {
+  var TEXT = {
+    pt: {
+      docTitle: 'Kilo · Lista de espera',
+      title: 'Entre na lista de espera do Kilo',
+      pitch: 'Kilo é um app para registrar seus treinos e sua alimentação em um só lugar. Em breve no iPhone, grátis.',
+      emailLabel: 'Seu e-mail',
+      placeholder: 'voce@exemplo.com',
+      button: 'Entrar na lista de espera',
+      sending: 'Enviando…',
+      consent: 'Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.',
+      privacy: 'Privacidade',
+      doneTitle: 'Pronto!',
+      doneText: 'Você vai ser um dos primeiros a saber quando o Kilo chegar.',
+      doneLeave: 'Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.',
+      questions: 'Dúvidas:',
+      invalid: 'Confira o e-mail. Parece que falta alguma coisa.',
+      busy: 'Muita gente entrando agora. Tente de novo em alguns minutos.',
+      failed: 'Não deu para enviar. Confira sua internet e tente de novo.',
+      toggle: 'English', toggleLang: 'en'
+    },
+    en: {
+      docTitle: 'Kilo · Waitlist',
+      title: 'Join the Kilo waitlist',
+      pitch: 'Kilo is an app for tracking your workouts and what you eat, in one place. Coming soon to iPhone, free.',
+      emailLabel: 'Your email',
+      placeholder: 'you@example.com',
+      button: 'Join the waitlist',
+      sending: 'Sending…',
+      consent: 'We will only email you about the Kilo launch. You can leave the list at any time.',
+      privacy: 'Privacy',
+      doneTitle: 'Done!',
+      doneText: 'You will be one of the first to know when Kilo arrives.',
+      doneLeave: 'To leave the list, use the link in the launch email or write to contato@kiloapp.com.br.',
+      questions: 'Questions:',
+      invalid: 'Check the email. It looks like something is missing.',
+      busy: 'Lots of people are joining right now. Try again in a few minutes.',
+      failed: 'Could not send it. Check your connection and try again.',
+      toggle: 'Português', toggleLang: 'pt-BR'
+    }
+  };
+  var params = new URLSearchParams(location.search);
+  // The tag in the link (?origem=ig-treino) says which account brought the person; the database keeps only well-formed tags.
+  var origem = (params.get('origem') || '').trim().toLowerCase().slice(0, 40) || null;
+  var lang = params.get('lang') === 'en' ? 'en' : 'pt';
+  var form = document.getElementById('join');
+  var email = document.getElementById('email');
+  var button = document.getElementById('join-button');
+  var status = document.getElementById('status');
+  var sending = false;
+
+  function apply() {
+    var t = TEXT[lang];
+    document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
+    document.title = t.docTitle;
+    document.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t[el.getAttribute('data-t')]; });
+    email.placeholder = t.placeholder;
+    var toggle = document.getElementById('lang-toggle');
+    toggle.textContent = t.toggle;
+    toggle.lang = t.toggleLang;
+    document.getElementById('privacy-link').href = '/lista/privacidade/' + (lang === 'en' ? '?lang=en' : '');
+    if (sending) button.textContent = t.sending;
+    clearError();
+  }
+
+  function clearError() {
+    status.textContent = '';
+    status.className = 'status';
+    email.removeAttribute('aria-invalid');
+  }
+
+  function showError(key) {
+    status.textContent = TEXT[lang][key];
+    status.className = 'status error';
+    if (key === 'invalid') email.setAttribute('aria-invalid', 'true');
+  }
+
+  document.getElementById('lang-toggle').addEventListener('click', function () {
+    lang = lang === 'en' ? 'pt' : 'en';
+    apply();
+  });
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (sending) return;
+    var value = email.value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) || value.length > 254) { showError('invalid'); email.focus(); return; }
+    var config = window.KILO_WAITLIST || {};
+    if (!config.url || !config.key) { showError('failed'); return; }
+    sending = true;
+    button.disabled = true;
+    button.textContent = TEXT[lang].sending;
+    clearError();
+    fetch(config.url + '/rest/v1/rpc/join_waitlist', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', apikey: config.key },
+      body: JSON.stringify({ p_email: value, p_origem: origem, p_lang: lang, p_website: document.getElementById('kx-check').value })
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (body) { return { ok: response.ok, body: body }; });
+    }).then(function (result) {
+      if (result.ok && result.body && result.body.ok === true) {
+        document.getElementById('form-card').hidden = true;
+        var done = document.getElementById('done');
+        done.hidden = false;
+        done.focus();
+        return;
+      }
+      var error = result.body && result.body.error;
+      showError(error === 'invalid-email' ? 'invalid' : error === 'busy' ? 'busy' : 'failed');
+    }).catch(function () {
+      showError('failed');
+    }).then(function () {
+      sending = false;
+      button.disabled = false;
+      button.textContent = TEXT[lang].button;
+    });
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>
