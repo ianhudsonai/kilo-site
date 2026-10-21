@@ -41,8 +41,11 @@
       </div>
       <div class="phone-stage">
         <img class="gorilla wave" src="/assets/img/gorila.webp" width="204" height="360" alt="O gorila do Kilo dando oi" data-t-alt="gorillaWaveAlt">
-        <div class="phone">
-          <div class="screen"><img src="/assets/img/treino-aceitar-sugestao.webp" width="390" height="844" alt="Tela de treino do Kilo: o supino da última vez, 3 séries de 60 kg, e o botão Aceitar sugestão" data-t-alt="phoneAlt"></div>
+        <div class="phone-turn">
+          <div class="phone">
+            <div class="screen"><img src="/assets/img/treino-aceitar-sugestao.webp" width="390" height="844" alt="Tela de treino do Kilo: o supino da última vez, 3 séries de 60 kg, e o botão Aceitar sugestão" data-t-alt="phoneAlt"></div>
+          </div>
+          <div class="phone-back" aria-hidden="true"><span class="cams"></span><span class="mark">K</span></div>
         </div>
       </div>
     </section>
@@ -166,6 +169,16 @@
       </div>
     </section>
   </main>
+
+  <div class="join-bar"><button type="button" class="join" data-t="joinBar">Entrar na lista</button></div>
+  <aside class="qr-card" hidden aria-labelledby="qr-title">
+    <button type="button" class="qr-close" aria-label="Fechar" data-t-aria="close">×</button>
+    <img src="/assets/qr/kilo.svg" width="112" height="112" alt="Código QR que abre o site do Kilo no celular" data-t-alt="qrAlt">
+    <div>
+      <p class="qr-title" id="qr-title" data-t="qrTitle">Abra no celular</p>
+      <p data-t="qrText">Aponte a câmera do celular para entrar na lista por lá.</p>
+    </div>
+  </aside>
 
   <footer>
     <a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a>

@@ -72,6 +72,11 @@
       gorillaNotesAlt: 'O gorila do Kilo de olho no seu progresso',
       gorillaPointAlt: 'O gorila do Kilo convidando você para entrar na lista',
       gorillaCheerAlt: 'O gorila do Kilo comemorando com você',
+      joinBar: 'Entrar na lista',
+      close: 'Fechar',
+      qrAlt: 'Código QR que abre o site do Kilo no celular',
+      qrTitle: 'Abra no celular',
+      qrText: 'Aponte a câmera do celular para entrar na lista por lá.',
       disclaimer: 'O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.',
       invalid: 'Confira o e-mail. Parece que falta alguma coisa.',
       busy: 'Muita gente entrando agora. Tente de novo em alguns minutos.',
@@ -146,6 +151,11 @@
       gorillaNotesAlt: 'The Kilo gorilla keeping an eye on your progress',
       gorillaPointAlt: 'The Kilo gorilla inviting you to join the list',
       gorillaCheerAlt: 'The Kilo gorilla celebrating with you',
+      joinBar: 'Join the waitlist',
+      close: 'Close',
+      qrAlt: 'QR code that opens the Kilo site on your phone',
+      qrTitle: 'Open it on your phone',
+      qrText: 'Point your phone\'s camera here to join the list from there.',
       disclaimer: 'Kilo is a tracking tool and does not replace advice from a doctor or dietitian.',
       invalid: 'Check the email. It looks like something is missing.',
       busy: 'Lots of people are joining right now. Try again in a few minutes.',
@@ -161,6 +171,9 @@
   var boxes = Array.prototype.slice.call(document.querySelectorAll('[data-join]'));
   var toggle = document.getElementById('lang-toggle');
   var sendingBox = null;
+  var joined = false;
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var watch = 'IntersectionObserver' in window;
 
   function each(selector, fn) { Array.prototype.forEach.call(document.querySelectorAll(selector), fn); }
 
@@ -172,6 +185,7 @@
     each('[data-t]', function (el) { el.textContent = t[el.getAttribute('data-t')]; });
     each('[data-t-placeholder]', function (el) { el.placeholder = t[el.getAttribute('data-t-placeholder')]; });
     each('[data-t-alt]', function (el) { el.alt = t[el.getAttribute('data-t-alt')]; });
+    each('[data-t-aria]', function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-t-aria')]); });
     each('[data-privacy]', function (el) { el.href = '/lista/privacidade/' + (lang === 'en' ? '?lang=en' : ''); });
     toggle.textContent = t.toggle;
     toggle.lang = t.toggleLang;
@@ -204,6 +218,8 @@
       box.querySelector('.join-done').hidden = false;
     });
     fromBox.querySelector('.join-done').focus();
+    joined = true;
+    placeExtras();
   }
 
   toggle.addEventListener('click', function () {
@@ -249,6 +265,69 @@
       });
     });
   });
+
+  // The hero phone starts facing away and spins round once it is on screen (CSS .ready / .turned). Without JavaScript,
+  // or with reduce motion, it simply faces the visitor.
+  var turn = document.querySelector('.phone-turn');
+  if (!still && watch) {
+    turn.classList.add('ready');
+    var spin = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { turn.classList.add('turned'); spin.disconnect(); }
+    }, { threshold: 0.15 });
+    spin.observe(turn);
+  }
+
+  // Sections slide in gently the first time they come into view.
+  if (!still && watch) {
+    var slide = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { if (entry.isIntersecting) { entry.target.classList.add('in'); slide.unobserve(entry.target); } });
+    }, { threshold: 0.12 });
+    each('main > section.band', function (el) {
+      // A section already on screen at load stays put; only the ones below slide.
+      if (el.getBoundingClientRect().top < window.innerHeight) return;
+      el.classList.add('reveal');
+      slide.observe(el);
+    });
+  }
+
+  // The phone join bar and the computer QR card. Neither may ever cover an email box: the bar hides while either box is
+  // on screen, and the card hides wherever it would overlap one.
+  var bar = document.querySelector('.join-bar');
+  var card = document.querySelector('.qr-card');
+  var heroBox = boxes[0], endBox = boxes[boxes.length - 1];
+  var phoneWidth = window.matchMedia('(max-width: 899px)');
+  var cardClosed = false, cardDue = false;
+  // The tags the short links use; each has its QR code in assets/qr (made by tools/make-qr.py).
+  var QR_TAGS = ['ig-kiloapp', 'ig-elas', 'ig-treino', 'tt-kiloapp', 'tt-elas', 'tt-treino', 'ig-ian'];
+  card.querySelector('img').src = '/assets/qr/' + (QR_TAGS.indexOf(origem) >= 0 ? origem : 'kilo') + '.svg';
+
+  function onScreen(el) { var r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; }
+  function overlaps(a, b) { return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom; }
+
+  function placeExtras() {
+    var showBar = phoneWidth.matches && !joined && heroBox.getBoundingClientRect().bottom < 0 && !onScreen(heroBox) && !onScreen(endBox);
+    bar.classList.toggle('show', showBar);
+    if (card.hidden) return;
+    // Where the card sits when shown (bottom right), whether or not it is showing now.
+    var home = { right: window.innerWidth - 20, bottom: window.innerHeight - 20 };
+    home.left = home.right - card.offsetWidth; home.top = home.bottom - card.offsetHeight;
+    var clear = boxes.every(function (box) { return !overlaps(home, box.getBoundingClientRect()); });
+    card.classList.toggle('show', cardDue && !cardClosed && !joined && !phoneWidth.matches && clear);
+  }
+
+  var queued = false;
+  function queue() { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; placeExtras(); }); } }
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
+
+  bar.querySelector('button').addEventListener('click', function () {
+    endBox.querySelector('input[type=email]').focus({ preventScroll: true });
+    endBox.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
+  });
+  card.querySelector('.qr-close').addEventListener('click', function () { cardClosed = true; placeExtras(); });
+  card.hidden = false;
+  setTimeout(function () { cardDue = true; placeExtras(); }, still ? 0 : 1200);
+  placeExtras();
 
   // The gorilla plays his move each time he comes into view, instead of moving all the time (a few seconds, then he rests).
   if ('IntersectionObserver' in window) {

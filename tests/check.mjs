@@ -405,6 +405,96 @@ await check('on the smallest phones the hero gorilla stays on screen and off the
   await v.close();
 });
 
+await check('the hero phone starts facing away, then spins round and settles slightly turned', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const turn = v.page.locator('.phone-turn');
+  expect(await turn.evaluate(el => el.classList.contains('ready')), 'the phone does not start facing away');
+  await v.page.waitForFunction(() => document.querySelector('.phone-turn').classList.contains('turned'), null, { timeout: TIMEOUT })
+    .catch(() => { throw new Error('the phone never turned round'); });
+  expect((await turn.evaluate(el => getComputedStyle(el).animationName)) === 'phone-spin', 'the phone turned without the spin');
+  await v.page.waitForTimeout(1600);
+  // Settled: facing the visitor (cos of the turn > 0) but still a little turned, not flat.
+  const m11 = await turn.evaluate(el => new DOMMatrix(getComputedStyle(el).transform).m11);
+  expect(m11 > 0.9 && m11 < 0.999, `the phone settled at m11 ${m11.toFixed(3)}, not slightly turned towards the visitor`);
+  await v.close();
+});
+
+await check('sections slide in as they come into view', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const faq = v.page.locator('section#perguntas');
+  expect(await faq.evaluate(el => el.classList.contains('reveal') && !el.classList.contains('in')), 'the FAQ is not waiting to slide in');
+  await faq.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await v.page.waitForFunction(() => document.querySelector('section#perguntas').classList.contains('in'), null, { timeout: TIMEOUT })
+    .catch(() => { throw new Error('the FAQ never slid in'); });
+  await v.close();
+});
+
+await check('on a phone, the join bar shows once the hero email box is gone and hides by either email box', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const bar = v.page.locator('.join-bar');
+  expect(!(await bar.isVisible()), 'the join bar shows next to the hero email box');
+  await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  await bar.waitFor({ state: 'visible', timeout: TIMEOUT }).catch(() => { throw new Error('no join bar after scrolling past the hero'); });
+  await v.page.locator('#email-end').evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await bar.waitFor({ state: 'hidden', timeout: TIMEOUT }).catch(() => { throw new Error('the join bar stays over the closing email box'); });
+  await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  await bar.getByRole('button').click();
+  await v.page.waitForFunction(() => document.activeElement && document.activeElement.id === 'email-end', null, { timeout: TIMEOUT })
+    .catch(() => { throw new Error('tapping the bar does not put the cursor in the closing email box'); });
+  await v.close();
+});
+
+await check('on a computer, the QR card slides in with the page tag, never covers an email box, and closes', async () => {
+  const v = await visitor({ viewport: { width: 1440, height: 900 } });
+  await v.page.goto(base + '/?origem=ig-treino');
+  const card = v.page.locator('.qr-card');
+  await card.waitFor({ state: 'visible', timeout: TIMEOUT }).catch(() => { throw new Error('no QR card on a wide screen'); });
+  expect((await card.locator('img').getAttribute('src')).endsWith('/assets/qr/ig-treino.svg'), 'the QR code drops the page tag');
+  expect(!(await v.page.locator('.join-bar').isVisible()), 'the phone join bar shows on a computer');
+  const overlaps = async () => v.page.evaluate(() => {
+    const c = document.querySelector('.qr-card');
+    if (c.hidden || getComputedStyle(c).visibility === 'hidden') return false;
+    const a = c.getBoundingClientRect();
+    return [...document.querySelectorAll('[data-join]')].some(box => { const b = box.getBoundingClientRect(); return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom; });
+  });
+  for (const y of [0, 0.5, 1]) {
+    await v.page.evaluate(f => window.scrollTo({ top: f * document.documentElement.scrollHeight, behavior: 'instant' }), y);
+    await v.page.waitForTimeout(400);
+    expect(!(await overlaps()), `the QR card covers an email box at ${y * 100}% down the page`);
+  }
+  await v.page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await card.waitFor({ state: 'visible', timeout: TIMEOUT });
+  await card.getByRole('button', { name: 'Fechar' }).click();
+  await card.waitFor({ state: 'hidden', timeout: TIMEOUT }).catch(() => { throw new Error('the QR card does not close'); });
+  await v.close();
+  const phone = await visitor();
+  await phone.page.goto(base + '/');
+  await phone.page.waitForTimeout(1500);
+  expect(!(await phone.page.locator('.qr-card').isVisible()), 'the QR card shows on a phone');
+  await phone.close();
+});
+
+await check('with reduce motion on, the phone faces the visitor and nothing spins or slides', async () => {
+  const v = await visitor({ reducedMotion: 'reduce' });
+  await v.page.goto(base + '/');
+  await v.page.waitForTimeout(300);
+  const state = await v.page.evaluate(() => ({
+    spin: getComputedStyle(document.querySelector('.phone-turn')).animationName,
+    transform: getComputedStyle(document.querySelector('.phone-turn')).transform,
+    reveal: document.querySelectorAll('.reveal').length,
+  }));
+  expect(state.spin === 'none' && state.transform === 'none', `the phone moves: ${JSON.stringify(state)}`);
+  expect(state.reveal === 0, `${state.reveal} sections still slide in`);
+  await v.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  const bar = v.page.locator('.join-bar');
+  await bar.waitFor({ state: 'visible', timeout: TIMEOUT });
+  expect((await bar.evaluate(el => getComputedStyle(el).transitionDuration)).split(',').every(d => parseFloat(d) === 0), 'the join bar still slides');
+  await v.close();
+});
+
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
   for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
     const v = await visitor({ viewport, colorScheme });
