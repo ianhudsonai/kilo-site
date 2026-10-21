@@ -52,6 +52,15 @@ One page per exercise in the app's library (294), plus an index by muscle group,
 - Source and licence: the library and its tips were written for Kilo ("written fresh; no third-party data", migration 00031), so no outside credit is needed. The tips are general technique reminders, not a prescription, and every page says so.
 - The box claims only what the approved App Store text says: the suggested weight for the next set, the last numbers filled in, and each exercise's history and chart.
 
+## Comparison pages (/comparar/)
+
+Hand-written pages for people who search "MyFitnessPal vale a pena?" or "fatsecret ou Kilo": `comparar/myfitnesspal/` and `comparar/fatsecret/`, each ending with the waitlist box tagged `seo-compare`. Comparative advertising in Brazil must be true, checkable and must not put the other product down, so:
+
+- Every fact about the other app comes from a page actually opened, recorded word for word in the HTML comment at the top of the page, with the date. The page shows that date and links those pages; the check stops if a linked source is missing from the comment.
+- Each page says first what the other app does well, says the Kilo is not out yet and is not affiliated with the other app, and leaves out anything that could not be checked (prices, ratings, ads where the source says nothing).
+- Kilo's side uses only the approved App Store text.
+- Apps change: re-open the sources, update the facts, the comment and the date together, and re-check at launch.
+
 ## Calorie calculator (/calculadora/)
 
 A free calculator for a daily calorie and macro target, in Portuguese and English (`?lang=en`), ending with the waitlist box tagged `seo-calc`. `assets/calculator.js` holds the Kilo app's goal maths (`target-calculator.ts` in the app repo), with the pace the app uses when none is picked (lose 0.5 kg a week, gain 0.25); the app's onboarding dial can start a little faster for small bodies, so the page says it uses the default pace, and the app's own warning words (`target-rules.ts`). It runs in the browser only: the number boxes have no names and the form never submits.
