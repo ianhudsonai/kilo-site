@@ -171,6 +171,34 @@
   var params = new URLSearchParams(location.search);
   // The tag in the link (?origem=ig-treino) says which account brought the person; the database keeps only well-formed tags.
   var origem = (params.get('origem') || '').trim().toLowerCase().slice(0, 40) || null;
+
+  // The visitor counter: Umami Cloud, cookie-free, data in its EU region. Off until ian approves the line about it on the waitlist
+  // privacy page; then src and id get the two values from Umami's tracking code. Nothing loads while id is empty. It counts pages,
+  // where visits come from, scroll depth and taps on the join buttons, never an email, and only the origem and lang tags of the
+  // address. If it is blocked or broken, the page works the same.
+  var COUNTER = { src: '', id: '' };
+  window.kiloCounterBeforeSend = function (type, payload) {
+    try {
+      var url = new URL(payload.url, location.origin), kept = new URLSearchParams();
+      ['origem', 'lang'].forEach(function (key) { if (url.searchParams.has(key)) kept.set(key, url.searchParams.get(key)); });
+      var query = kept.toString();
+      payload.url = url.pathname + (query ? '?' + query : '');
+    } catch (e) { return null; }
+    return payload;
+  };
+  if (COUNTER.src && COUNTER.id) {
+    var counter = document.createElement('script');
+    counter.defer = true;
+    counter.src = COUNTER.src;
+    counter.setAttribute('data-website-id', COUNTER.id);
+    counter.setAttribute('data-domains', 'kiloapp.com.br');
+    counter.setAttribute('data-do-not-track', 'true');
+    counter.setAttribute('data-before-send', 'kiloCounterBeforeSend');
+    document.head.appendChild(counter);
+  }
+  function count(name, data) {
+    try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* never in the way */ }
+  }
   var lang = params.get('lang') === 'en' ? 'en' : 'pt';
   var boxes = Array.prototype.slice.call(document.querySelectorAll('[data-join]'));
   var toggle = document.getElementById('lang-toggle');
@@ -276,8 +304,10 @@
     var form = box.querySelector('form');
     var email = box.querySelector('input[type=email]');
     var button = box.querySelector('button.join');
+    var where = box === boxes[0] ? 'topo' : 'fim';
     form.addEventListener('submit', function (event) {
       event.preventDefault();
+      count('entrar-na-lista', { lugar: where });
       if (sendingBox) return;
       var value = email.value.trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) || value.length > 254) { showError(box, 'invalid'); email.focus(); return; }
@@ -299,6 +329,7 @@
           var n = result.body.position;
           if (typeof n === 'number' && Number.isInteger(n) && n >= 1 && n < 1e9) { place = n; renderPlace(TEXT[lang]); }
           showDone(box);
+          count('entrou', { lugar: where });
           return;
         }
         var error = result.body && result.body.error;
@@ -339,7 +370,7 @@
   var card = document.querySelector('.qr-card');
   var heroBox = boxes[0], endBox = boxes[boxes.length - 1];
   var phoneWidth = window.matchMedia('(max-width: 899px)');
-  var cardClosed = false, cardDue = false;
+  var cardClosed = false, cardDue = false, cardCounted = false;
   // The tags the short links use; each has its QR code in assets/qr (made by tools/make-qr.py).
   var QR_TAGS = ['ig-kiloapp', 'ig-elas', 'ig-treino', 'tt-kiloapp', 'tt-elas', 'tt-treino', 'ig-ian'];
   var qr = card.querySelector('img');
@@ -361,19 +392,29 @@
     var showCard = cardDue && !cardClosed && !joined && !phoneWidth.matches && clear;
     // The code loads only when the card first shows, so phones never fetch it.
     if (showCard && !qr.getAttribute('src')) qr.src = '/assets/qr/' + (QR_TAGS.indexOf(origem) >= 0 ? origem : 'kilo') + '.svg';
+    if (showCard && !cardCounted) { cardCounted = true; count('qr-mostrado'); }
     card.classList.toggle('show', showCard);
   }
 
   var queued = false;
-  function queue() { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; placeExtras(); }); } }
+  // How far down the page the visitor got: 25, 50, 75 and 100%, each counted once.
+  var depths = [25, 50, 75, 100];
+  function countDepth() {
+    if (!window.umami) return; // marks wait until the counter is there (it never is while switched off or blocked)
+    var seen = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+    while (depths.length && seen >= depths[0] - 1) count('rolagem', { ate: depths.shift() });
+  }
+  function queue() { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; placeExtras(); countDepth(); }); } }
   window.addEventListener('scroll', queue, { passive: true });
   window.addEventListener('resize', queue);
 
   bar.querySelector('button').addEventListener('click', function () {
+    count('entrar-na-lista', { lugar: 'barra' });
     endBox.querySelector('input[type=email]').focus({ preventScroll: true });
     endBox.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
   });
   card.querySelector('.qr-close').addEventListener('click', function () {
+    count('qr-fechado');
     cardClosed = true;
     placeExtras();
     // The button just vanished: hand focus back to the page so keyboard users carry on from the top of the content.

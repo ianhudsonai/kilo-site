@@ -1026,6 +1026,93 @@ await check('the calculator fits a small phone in light and dark mode, and says 
   await n.close();
 });
 
+// The counter is off until ian approves the privacy line: then site.js gets the two values from the Umami tracking code.
+const COUNTER_OFF = "var COUNTER = { src: '', id: '' };";
+/** Turns the counter on for this page and fakes Umami's script, which records what the page counts in window.counted. */
+async function withCounter(page, script = 'window.umami = { track: function (name, data) { (window.counted = window.counted || []).push([name, data || null]); } };') {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
+  expect(js.includes(COUNTER_OFF), 'site.js has no switched-off counter line');
+  await page.route(base + '/assets/site.js', route => route.fulfill({ contentType: 'text/javascript',
+    body: js.replace(COUNTER_OFF, "var COUNTER = { src: 'https://cloud.umami.is/script.js', id: '00000000-test' };") }));
+  await page.route('https://cloud.umami.is/script.js', route => script === null ? route.abort() : route.fulfill({ contentType: 'text/javascript', body: script }));
+}
+
+await check('the visitor counter is off until approved: nothing loads and nothing is counted', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  await v.page.waitForTimeout(800);
+  expect(await v.page.locator('script[data-website-id]').count() === 0, 'a counter script is on the page');
+  expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
+  await v.close();
+});
+
+await check('when switched on, the counter loads cookie-free from Umami and counts taps, joins, scroll depth and the QR card', async () => {
+  const v = await visitor();
+  await withCounter(v.page);
+  await v.page.goto(base + '/?origem=ig-treino&t=segredo');
+  const tag = await v.page.locator('script[data-website-id]').evaluate(el => ({
+    src: el.src, id: el.dataset.websiteId, domains: el.dataset.domains, dnt: el.dataset.doNotTrack, before: el.dataset.beforeSend, defer: el.defer }));
+  expect(tag.src === 'https://cloud.umami.is/script.js' && tag.id === '00000000-test' && tag.domains === 'kiloapp.com.br' && tag.dnt === 'true' && tag.defer, `script tag ${JSON.stringify(tag)}`);
+  // Only the origem and lang tags of the address are counted, never anything else in it.
+  const url = await v.page.evaluate(name => window[name]('event', { url: '/?origem=ig-treino&t=segredo&lang=en', website: 'x' }).url, tag.before);
+  expect(url === '/?origem=ig-treino&lang=en', `the counted address is ${url}`);
+  await v.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  await join(v.page, 'nao-conta@exemplo.com');
+  await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  await v.page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  await v.page.waitForFunction(() => (window.counted || []).filter(c => c[0] === 'rolagem').length === 4, null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`scroll depth: ${JSON.stringify(await v.page.evaluate(() => window.counted))}`); });
+  const counted = await v.page.evaluate(() => window.counted);
+  const has = (name, data) => counted.some(c => c[0] === name && JSON.stringify(c[1]) === JSON.stringify(data));
+  expect(has('entrar-na-lista', { lugar: 'topo' }) && has('entrou', { lugar: 'topo' }), `join not counted: ${JSON.stringify(counted)}`);
+  expect([25, 50, 75, 100].every(n => has('rolagem', { ate: n })), `scroll marks: ${JSON.stringify(counted)}`);
+  expect(!JSON.stringify(counted).includes('@'), 'an email reached the counter');
+  await v.close();
+  // The phone bar and the closing box.
+  const p = await visitor();
+  await withCounter(p.page);
+  await p.page.goto(base + '/');
+  await p.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  await p.page.locator('section#telas').evaluate(el => el.scrollIntoView({ behavior: 'instant' }));
+  await p.page.locator('.join-bar').getByRole('button').click();
+  await join(p.page, 'nao-conta@exemplo.com', 1);
+  await p.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  const phone = await p.page.evaluate(() => window.counted);
+  const phoneHas = (name, data) => phone.some(c => c[0] === name && JSON.stringify(c[1]) === JSON.stringify(data));
+  expect(phoneHas('entrar-na-lista', { lugar: 'barra' }) && phoneHas('entrar-na-lista', { lugar: 'fim' }) && phoneHas('entrou', { lugar: 'fim' }), `phone: ${JSON.stringify(phone)}`);
+  await p.close();
+  // The QR card on a computer.
+  const d = await visitor({ viewport: { width: 1440, height: 900 } });
+  await withCounter(d.page);
+  await d.page.goto(base + '/');
+  const card = d.page.locator('.qr-card');
+  await card.waitFor({ state: 'visible', timeout: TIMEOUT });
+  await card.getByRole('button', { name: 'Fechar' }).click();
+  await d.page.waitForFunction(() => (window.counted || []).some(c => c[0] === 'qr-fechado'), null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`QR card: ${JSON.stringify(await d.page.evaluate(() => window.counted))}`); });
+  expect(await d.page.evaluate(() => window.counted.filter(c => c[0] === 'qr-mostrado').length === 1), 'the QR card showing is not counted once');
+  await d.close();
+});
+
+await check('with the counter blocked or broken, the page and sign-up still work', async () => {
+  for (const script of [null, 'throw new Error("broken counter")', 'window.umami = { track: function () { throw new Error("broken track"); } };']) {
+    const v = await visitor();
+    const errors = [];
+    v.page.on('pageerror', e => errors.push(e.message));
+    await withCounter(v.page, script);
+    await v.page.goto(base + '/');
+    await v.page.waitForTimeout(500);
+    await join(v.page, 'ana@exemplo.com');
+    await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 })
+      .catch(() => { throw new Error(`sign-up fails with counter ${script === null ? 'blocked' : script}`); });
+    await v.page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    await v.page.waitForTimeout(300);
+    expect(errors.every(m => /broken counter/.test(m)), `page errors: ${errors.join('; ')}`);
+    expect(v.sent.length === 1, `join calls: ${v.sent.length}`);
+    await v.close();
+  }
+});
+
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
   for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
     const v = await visitor({ viewport, colorScheme });

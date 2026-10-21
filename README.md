@@ -67,6 +67,12 @@ A free calculator for a daily calorie and macro target, in Portuguese and Englis
 
 `data/goal-samples.json` holds the app's answers for 684 sample people, written by `node --experimental-strip-types tools/make-goal-samples.mjs /path/to/fitness-app`. The check compares the site's answers with them, so when the app's goal maths changes, rerun that and fix `assets/calculator.js` until the check passes.
 
+## Visitor counter
+
+`assets/site.js` can load Umami Cloud, a cookie-free counter with its data in the EU region. It stays off while `COUNTER` holds empty values. Switch it on only together with its section on the waitlist privacy page, once ian has approved that text: paste the `src` and `data-website-id` from Umami's tracking code into `COUNTER`.
+
+It counts pages, sources (only the `origem` and `lang` parts of the address), scroll depth (`rolagem`), taps on the join buttons (`entrar-na-lista`), joins (`entrou`) and the QR card (`qr-mostrado`, `qr-fechado`). It never counts an email. If the counter is blocked or broken, the page works the same.
+
 ## Checking the site
 
 ```sh
