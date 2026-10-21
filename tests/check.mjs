@@ -312,6 +312,44 @@ await check('the app screens below the hero show their top edge on a phone (only
   await v.close();
 });
 
+await check('the gorilla is in the hero, by the learn blocks and at the closing box, and each one moves', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  for (const spot of ['.hero .phone-stage', '#aprende', '.closing-text']) {
+    const gorilla = v.page.locator(`${spot} img.gorilla`).first();
+    // A moving element never counts as stable for Playwright's own scrolling, so scroll it in directly.
+    await gorilla.evaluate(el => el.scrollIntoView({ block: 'center' }));
+    expect(await gorilla.isVisible(), `no gorilla showing in ${spot}`);
+    await v.page.waitForFunction(el => el.complete && el.naturalWidth > 0, await gorilla.elementHandle(), { timeout: TIMEOUT })
+      .catch(() => { throw new Error(`the ${spot} gorilla image did not load`); });
+    expect(((await gorilla.getAttribute('alt')) || '').length > 10, `the ${spot} gorilla has no alt text`);
+    const moving = await gorilla.evaluate(el => getComputedStyle(el).animationName);
+    expect(moving !== 'none', `the ${spot} gorilla just stands there`);
+  }
+  await v.close();
+});
+
+await check('the cheering gorilla shows next to Pronto after a successful join', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const cheer = v.page.locator('.join-done img.gorilla').first();
+  expect(!(await cheer.isVisible()), 'the cheering gorilla shows before anyone joined');
+  await join(v.page, 'ana@exemplo.com');
+  await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });
+  await cheer.waitFor({ state: 'visible', timeout: 3000 }).catch(() => { throw new Error('no cheering gorilla after joining'); });
+  expect((await cheer.evaluate(el => getComputedStyle(el).animationName)) !== 'none', 'the cheering gorilla does not move');
+  await v.close();
+});
+
+await check('with reduce motion on, the gorillas hold still', async () => {
+  const v = await visitor({ reducedMotion: 'reduce' });
+  await v.page.goto(base + '/');
+  const names = await v.page.locator('img.gorilla').evaluateAll(els => els.map(el => getComputedStyle(el).animationName));
+  expect(names.length >= 5, `expected the 3 page gorillas and 2 cheering ones, saw ${names.length}`);
+  expect(names.every(n => n === 'none'), `some gorillas still move: ${names.join(', ')}`);
+  await v.close();
+});
+
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
   for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
     const v = await visitor({ viewport, colorScheme });
