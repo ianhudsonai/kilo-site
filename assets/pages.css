@@ -1,0 +1,59 @@
+/* The Google pages (foods now; calculator and exercises later): plain reading pages in the landing page's colours. */
+:root {
+  --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE;
+  --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --ink: #20231F; --on-ink: #F5F4EE;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --ink: #F5F4E9; --on-ink: #171A19; }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--link); font-weight: 600; }
+.wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+.top { display: flex; align-items: center; padding: 16px 0 8px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; font-size: 1.35rem; letter-spacing: -0.02em; }
+.mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 22px; }
+
+.crumbs { font-size: 0.9rem; color: var(--muted); margin: 8px 0 0; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.crumbs li + li::before { content: "›"; margin-right: 4px; }
+.crumbs a { font-weight: 500; }
+
+h1 { font-size: clamp(1.9rem, 7vw, 2.8rem); line-height: 1.08; letter-spacing: -0.03em; font-weight: 850; margin: 14px 0 6px; overflow-wrap: anywhere; }
+h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8px; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+
+/* The numbers: calories big, then the three macros. */
+.facts { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin: 0 0 14px; }
+.kcal { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.kcal strong { font-size: 3rem; line-height: 1; font-weight: 850; letter-spacing: -0.03em; }
+.kcal span { color: var(--muted); }
+.macros { width: 100%; border-collapse: collapse; }
+.macros th, .macros td { padding: 10px 0; border-top: 1px solid var(--line); text-align: left; font-weight: 500; }
+.macros td { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.na { color: var(--muted); font-size: 0.9rem; margin: 10px 0 0; }
+.source { color: var(--muted); font-size: 0.9rem; margin: 0 0 28px; }
+
+/* The waitlist box, tagged for the page type, opening the main page's form. */
+.join-card { background: var(--ink); color: var(--on-ink); border-radius: 18px; padding: 20px; margin: 0 0 32px; }
+.join-card p { margin: 0 0 14px; }
+.join-card .cta { display: inline-block; background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 800; padding: 13px 20px; border-radius: 12px; }
+.join-card .cta:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.join-card .small { margin: 10px 0 0; font-size: 0.85rem; opacity: 0.8; }
+
+.more { margin: 0 0 32px; }
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.list li { border-bottom: 1px solid var(--line); }
+.list a { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; text-decoration: none; font-weight: 500; color: var(--text); }
+.list a span { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.list a:hover b, .list a:focus-visible b { text-decoration: underline; }
+.list b { font-weight: 600; overflow-wrap: anywhere; }
+
+.jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; padding: 0; list-style: none; }
+.jump a { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; text-decoration: none; }
+.group { margin: 0 0 32px; scroll-margin-top: 16px; }
+
+footer { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 24px 0 40px; border-top: 1px solid var(--line); font-size: 0.9rem; color: var(--muted); }
+footer .note { flex-basis: 100%; margin: 0; }
