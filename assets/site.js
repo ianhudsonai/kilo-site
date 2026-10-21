@@ -183,9 +183,13 @@
   function counterAddress(address) {
     if (!address) return '';
     var url = new URL(address, location.origin);
-    if (url.origin !== location.origin) return url.origin + '/';
+    // protocol + host, not origin: an app's address (android-app://com.google.android.gm/) has the origin "null".
+    if (url.origin !== location.origin) return url.protocol + '//' + url.host + '/';
+    // Only well-formed tags pass, so a link with an email or anything else in them sends nothing.
     var kept = new URLSearchParams();
-    ['origem', 'lang'].forEach(function (key) { if (url.searchParams.has(key)) kept.set(key, url.searchParams.get(key)); });
+    var tag = url.searchParams.get('origem');
+    if (tag && /^[a-z0-9-]{1,40}$/.test(tag)) kept.set('origem', tag);
+    if (url.searchParams.get('lang') === 'en') kept.set('lang', 'en');
     var query = kept.toString();
     return (/^[a-z][a-z0-9+.-]*:/i.test(address) ? url.origin : '') + url.pathname + (query ? '?' + query : '');
   }
@@ -197,7 +201,10 @@
     } catch (e) { return null; }
     return payload;
   };
-  if (COUNTER.src && COUNTER.id) {
+  // Asking not to be tracked also means Umami's script is never fetched.
+  var noTracking = navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1';
+  var waiting = []; // events from before Umami's script has loaded, sent once it has
+  if (COUNTER.src && COUNTER.id && !noTracking) {
     var counter = document.createElement('script');
     counter.defer = true;
     counter.src = COUNTER.src;
@@ -205,10 +212,14 @@
     counter.setAttribute('data-domains', 'kiloapp.com.br');
     counter.setAttribute('data-do-not-track', 'true');
     counter.setAttribute('data-before-send', 'kiloCounterBeforeSend');
+    counter.onload = function () { waiting.splice(0).forEach(function (event) { count(event[0], event[1]); }); };
     document.head.appendChild(counter);
   }
   function count(name, data) {
-    try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* never in the way */ }
+    try {
+      if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data);
+      else if (waiting.length < 20) waiting.push([name, data]);
+    } catch (e) { /* never in the way */ }
   }
   var lang = params.get('lang') === 'en' ? 'en' : 'pt';
   var boxes = Array.prototype.slice.call(document.querySelectorAll('[data-join]'));

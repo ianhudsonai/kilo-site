@@ -1049,8 +1049,11 @@ const FAKE_UMAMI = `(function () {
   } };
 })();`;
 /** Serves `script` (the stand-in above, by default) as Umami's for this page. */
-async function withCounter(page, script = FAKE_UMAMI) {
-  await page.route('https://cloud.umami.is/script.js', route => script === null ? route.abort() : route.fulfill({ contentType: 'text/javascript', body: script }));
+async function withCounter(page, script = FAKE_UMAMI, delay = 0) {
+  await page.route('https://cloud.umami.is/script.js', async route => {
+    if (delay) await new Promise(done => setTimeout(done, delay));
+    return script === null ? route.abort() : route.fulfill({ contentType: 'text/javascript', body: script });
+  });
 }
 
 await check('the visitor counter is on, set to Kilo\'s Umami site, and loads once, from Umami only', async () => {
@@ -1083,6 +1086,8 @@ await check('when switched on, the counter loads cookie-free from Umami and coun
   expect(has('entrar-na-lista', { lugar: 'topo' }) && has('entrou', { lugar: 'topo' }), `join not counted: ${JSON.stringify(counted)}`);
   expect([25, 50, 75, 100].every(n => has('rolagem', { ate: n })), `scroll marks: ${JSON.stringify(counted)}`);
   expect(!JSON.stringify(counted).includes('@'), 'an email reached the counter');
+  const cookies = await v.page.context().cookies();
+  expect(cookies.length === 0, `cookies set: ${cookies.map(c => c.name).join(', ')}`);
   await v.close();
   // The phone bar and the closing box.
   const p = await visitor();
@@ -1108,6 +1113,16 @@ await check('when switched on, the counter loads cookie-free from Umami and coun
     .catch(async () => { throw new Error(`QR card: ${JSON.stringify(await d.page.evaluate(() => window.counted))}`); });
   expect(await d.page.evaluate(() => window.counted.filter(c => c[0] === 'qr-mostrado').length === 1), 'the QR card showing is not counted once');
   await d.close();
+  // The card can show before Umami's script has loaded (at once with reduced motion): it is still counted, once.
+  const r = await visitor({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  await withCounter(r.page, FAKE_UMAMI, 1500);
+  await r.page.goto(base + '/');
+  await r.page.locator('.qr-card').waitFor({ state: 'visible', timeout: TIMEOUT });
+  await r.page.waitForFunction(() => (window.counted || []).some(c => c[0] === 'qr-mostrado'), null, { timeout: TIMEOUT })
+    .catch(async () => { throw new Error(`QR card before the counter loaded: ${JSON.stringify(await r.page.evaluate(() => window.counted))}`); });
+  await r.page.waitForTimeout(300);
+  expect(await r.page.evaluate(() => window.counted.filter(c => c[0] === 'qr-mostrado').length === 1), 'the early QR card is not counted once');
+  await r.close();
 });
 
 await check('the counter sends only the origem and lang tags of any address, never click ids, emails or the other site\'s path', async () => {
@@ -1127,15 +1142,26 @@ await check('the counter sends only the origem and lang tags of any address, nev
   expect(sent[0].url === base + '/?origem=ig-treino' && sent[0].referrer === 'https://l.instagram.com/', `first page view: ${JSON.stringify(sent[0])}`);
   expect(sent.some(p => p.url === base + '/?origem=ig-treino&lang=en' && p.referrer === base + '/?origem=ig-treino'), `language switch: ${all}`);
   await v.close();
-  // A browser sending Global Privacy Control is not counted at all.
-  const g = await visitor();
-  await g.page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true }));
-  await withCounter(g.page);
-  await g.page.goto(base + '/?origem=ig-treino');
-  await g.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
-  await g.page.locator('#lang-toggle').click();
-  expect((await g.page.evaluate(() => window.sentPayloads.length)) === 0, 'a Global Privacy Control visit was counted');
-  await g.close();
+  // Only well-formed tags pass, and an app's address keeps its name.
+  const h = await visitor();
+  await withCounter(h.page);
+  await h.page.goto(base + '/');
+  await h.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
+  const cleaned = await h.page.evaluate(() => window.kiloCounterBeforeSend('event', {
+    url: location.origin + '/?origem=ana%40exemplo.com&lang=xx', referrer: 'android-app://com.google.android.gm/' }));
+  expect(cleaned.url === base + '/' && cleaned.referrer === 'android-app://com.google.android.gm/', `cleaned: ${JSON.stringify(cleaned)}`);
+  await h.close();
+  // A browser sending Global Privacy Control or Do Not Track never fetches Umami's script, so it is not counted at all.
+  for (const [name, key, value] of [['Global Privacy Control', 'globalPrivacyControl', true], ['Do Not Track', 'doNotTrack', '1']]) {
+    const g = await visitor();
+    await g.page.addInitScript(([key, value]) => Object.defineProperty(Navigator.prototype, key, { get: () => value }), [key, value]);
+    let fetched = false;
+    await g.page.route('https://cloud.umami.is/script.js', route => { fetched = true; return route.abort(); });
+    await g.page.goto(base + '/?origem=ig-treino');
+    await g.page.waitForTimeout(800);
+    expect(!fetched && (await g.page.locator('script[data-website-id]').count()) === 0, `a ${name} visit loaded the counter`);
+    await g.close();
+  }
 });
 
 await check('with the counter blocked or broken, the page and sign-up still work', async () => {
