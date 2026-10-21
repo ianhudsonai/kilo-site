@@ -19,6 +19,7 @@
       privacy: 'Privacidade',
       privacyFooter: 'Privacidade da lista de espera',
       doneTitle: 'Pronto!',
+      placeTitle: 'Você é o nº\u00a0{n} da fila',
       doneText: 'Você vai ser um dos primeiros a saber quando o Kilo chegar.',
       doneLeave: 'Para sair da lista, use o link no e-mail de lançamento ou escreva para contato@kiloapp.com.br.',
       closingTitle: 'Seja um dos primeiros a usar o Kilo.',
@@ -98,6 +99,7 @@
       privacy: 'Privacy',
       privacyFooter: 'Waitlist privacy',
       doneTitle: 'Done!',
+      placeTitle: 'You\'re number\u00a0{n} in line',
       doneText: 'You will be one of the first to know when Kilo arrives.',
       doneLeave: 'To leave the list, use the link in the launch email or write to contato@kiloapp.com.br.',
       closingTitle: 'Be one of the first to use Kilo.',
@@ -172,6 +174,7 @@
   var toggle = document.getElementById('lang-toggle');
   var sendingBox = null;
   var joined = false;
+  var place = null; // the place in line from the join answer, once the server sends one
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var watch = 'IntersectionObserver' in window;
 
@@ -187,6 +190,10 @@
     each('[data-t-alt]', function (el) { el.alt = t[el.getAttribute('data-t-alt')]; });
     each('[data-t-aria]', function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-t-aria')]); });
     each('[data-privacy]', function (el) { el.href = '/lista/privacidade/' + (lang === 'en' ? '?lang=en' : ''); });
+    if (place) {
+      var number = place.toLocaleString(lang === 'en' ? 'en-US' : 'pt-BR');
+      each('.join-done h2', function (el) { el.textContent = t.placeTitle.replace('{n}', number); });
+    }
     describe(t);
     toggle.textContent = t.toggle;
     toggle.lang = t.toggleLang;
@@ -281,7 +288,13 @@
       }).then(function (response) {
         return response.json().catch(function () { return {}; }).then(function (body) { return { ok: response.ok, body: body }; });
       }).then(function (result) {
-        if (result.ok && result.body && result.body.ok === true) { showDone(box); return; }
+        if (result.ok && result.body && result.body.ok === true) {
+          // The place in line, when the server sends one (after migration 00058); otherwise the plain "Pronto!".
+          var n = result.body.position;
+          if (typeof n === 'number' && Number.isInteger(n) && n >= 1 && n < 1e9) { place = n; apply(); }
+          showDone(box);
+          return;
+        }
         var error = result.body && result.body.error;
         showError(box, error === 'invalid-email' ? 'invalid' : error === 'busy' ? 'busy' : 'failed');
       }).catch(function () {
