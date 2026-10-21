@@ -143,6 +143,40 @@ await check('joining from the hero box sends the email, no tag and Portuguese, a
   await v.close();
 });
 
+await check('a join answer with a place in line says "Você é o nº X da fila", in both languages', async () => {
+  const v = await visitor({ reply: { ok: true, position: 1234 } });
+  await v.page.goto(base + '/');
+  await join(v.page, 'fila@exemplo.com');
+  await v.page.getByText('Você é o nº 1.234 da fila').first().waitFor({ timeout: 4000 })
+    .catch(() => { throw new Error('no place in line after joining'); });
+  expect(await v.page.locator('.join-done h2', { hasText: 'Pronto' }).count() === 0, 'Pronto still shows next to the place');
+  expect(await v.page.locator('.join-done:not([hidden]) img.gorilla').count() === 2, 'no cheering gorilla with the place');
+  await v.page.getByRole('button', { name: 'English' }).click();
+  await v.page.getByText("You're number 1,234 in line").first().waitFor({ timeout: 2000 })
+    .catch(() => { throw new Error('the place in line is not in English'); });
+  await v.close();
+  // Switched to English first, and back to Portuguese after.
+  const e = await visitor({ reply: { ok: true, position: 1234 } });
+  await e.page.goto(base + '/');
+  await e.page.getByRole('button', { name: 'English' }).click();
+  await join(e.page, 'fila@exemplo.com');
+  await e.page.getByText("You're number 1,234 in line").first().waitFor({ timeout: 4000 })
+    .catch(() => { throw new Error('no place in line when joining in English'); });
+  await e.page.getByRole('button', { name: 'Português' }).click();
+  await e.page.getByText('Você é o nº 1.234 da fila').first().waitFor({ timeout: 2000 })
+    .catch(() => { throw new Error('the place in line does not switch back to Portuguese'); });
+  await e.close();
+  // Anything but a whole number from 1 up shows the plain Pronto (the answer before the server change, or a broken one).
+  for (const position of [undefined, 0, -3, 2.5, '12', null, 1e12]) {
+    const w = await visitor({ reply: { ok: true, position } });
+    await w.page.goto(base + '/');
+    await join(w.page, 'fila@exemplo.com');
+    await w.page.getByText('Pronto!').first().waitFor({ timeout: 4000 })
+      .catch(() => { throw new Error(`position ${JSON.stringify(position)} does not show Pronto`); });
+    await w.close();
+  }
+});
+
 await check('joining from the closing box works the same way and hides both forms', async () => {
   const v = await visitor();
   await v.page.goto(base + '/?origem=ig-treino');
