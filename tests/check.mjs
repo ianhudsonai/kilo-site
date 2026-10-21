@@ -225,12 +225,99 @@ await check('?lang=en and the English switch show the page in English, and a joi
   await w.close();
 });
 
-await check('no sideways scroll on a small phone, in light and dark mode', async () => {
-  for (const colorScheme of ['light', 'dark']) {
-    const v = await visitor({ viewport: { width: 375, height: 667 }, colorScheme });
+await check('"O Kilo aprende com você" explains the three things Kilo learns', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const section = v.page.locator('section#aprende');
+  await section.getByRole('heading', { level: 2, name: 'O Kilo aprende com você' }).waitFor();
+  const titles = await section.getByRole('heading', { level: 3 }).allInnerTexts();
+  expect(JSON.stringify(titles) === JSON.stringify(['A carga da próxima série', 'Seu gasto diário real', 'Check-in semanal']), `blocks read ${JSON.stringify(titles)}`);
+  await v.close();
+});
+
+await check('Treino, Alimentação and Meta e peso each show a loaded app screenshot and two lines', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const cards = v.page.locator('section#telas figure');
+  expect((await cards.count()) === 3, `expected 3 screens, saw ${await cards.count()}`);
+  const names = [];
+  for (let i = 0; i < 3; i++) {
+    const card = cards.nth(i);
+    await card.scrollIntoViewIfNeeded();
+    const img = card.locator('img');
+    await v.page.waitForFunction(el => el.complete && el.naturalWidth > 0, await img.elementHandle(), { timeout: TIMEOUT })
+      .catch(() => { throw new Error(`screen ${i + 1} image did not load`); });
+    expect(((await img.getAttribute('alt')) || '').length > 20, `screen ${i + 1} has no real alt text`);
+    names.push((await card.getByRole('heading', { level: 3 }).innerText()).trim());
+    expect((await card.locator('p').count()) === 2, `screen ${i + 1} should have two lines`);
+  }
+  expect(JSON.stringify(names) === JSON.stringify(['Treino', 'Alimentação', 'Meta e peso']), `screens read ${JSON.stringify(names)}`);
+  expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
+  await v.close();
+});
+
+await check('six extras, the privacy promise and the six-question FAQ are on the page', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  expect((await v.page.locator('section#extras li').count()) === 6, `expected 6 extras, saw ${await v.page.locator('section#extras li').count()}`);
+  await v.page.getByRole('heading', { name: 'Sem anúncios, sem rastreamento' }).waitFor();
+  const questions = v.page.locator('section#perguntas summary');
+  expect((await questions.count()) === 6, `expected 6 questions, saw ${await questions.count()}`);
+  const android = v.page.locator('section#perguntas details', { hasText: 'Tem para Android?' });
+  const answer = android.locator('p');
+  expect(!(await answer.isVisible()), 'answers should start closed');
+  await android.locator('summary').click();
+  expect((await answer.innerText()).trim() === 'Primeiro no iPhone. O Android vem depois: entre na lista e avisamos.', `Android answer reads "${await answer.innerText()}"`);
+  await v.close();
+});
+
+// The page's words as site.js holds them, so the checks compare the page with the table instead of trusting it.
+const TEXT = (() => {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
+  const start = js.indexOf('var TEXT = ') + 'var TEXT = '.length;
+  return Function(`return ${js.slice(start, js.indexOf('\n  };', start) + 4)}`)();
+})();
+
+await check('every text and image description shows its own words in Portuguese and in English', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const read = () => v.page.evaluate(() => ({
+    texts: [...document.querySelectorAll('[data-t]')].map(el => [el.getAttribute('data-t'), el.textContent]),
+    alts: [...document.querySelectorAll('[data-t-alt]')].map(el => [el.getAttribute('data-t-alt'), el.getAttribute('alt')]),
+  }));
+  const seen = {};
+  for (const lang of ['pt', 'en']) {
+    if (lang === 'en') await v.page.getByRole('button', { name: 'English' }).click();
+    const { texts, alts } = await read();
+    for (const [key, text] of [...texts, ...alts]) {
+      expect(typeof TEXT[lang][key] === 'string' && TEXT[lang][key].trim() !== '', `${lang} has no words for "${key}"`);
+      expect(text === TEXT[lang][key], `${lang} "${key}" shows "${text}"`);
+    }
+    seen[lang] = new Map([...texts, ...alts]);
+  }
+  const untranslated = [...seen.pt].filter(([key, text]) => seen.en.get(key) === text).map(([key]) => key);
+  expect(untranslated.length === 0, `same words in both languages: ${untranslated.join(', ')}`);
+  expect(seen.pt.size >= 60, `expected the whole page to use the text table, saw ${seen.pt.size} keys`);
+  await v.close();
+  return `${seen.pt.size} keys`;
+});
+
+await check('the app screens below the hero show their top edge on a phone (only the hero screenshot is shifted)', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/');
+  const margins = await v.page.locator('#telas img').evaluateAll(els => els.map(el => getComputedStyle(el).marginTop));
+  expect(margins.every(m => m === '0px'), `screen margins are ${margins.join(', ')}`);
+  const hero = await v.page.locator('.hero .phone img').evaluate(el => getComputedStyle(el).marginTop);
+  expect(hero !== '0px', 'the hero screenshot lost its phone offset');
+  await v.close();
+});
+
+await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
+  for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
+    const v = await visitor({ viewport, colorScheme });
     await v.page.goto(base + '/');
     const wide = await v.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(wide <= 0, `${colorScheme}: page is ${wide}px wider than the screen`);
+    expect(wide <= 0, `${colorScheme} at ${viewport.width}px: page is ${wide}px wider than the screen`);
     await v.close();
   }
 });
