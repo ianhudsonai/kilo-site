@@ -22,6 +22,8 @@ const PACE = { lose: 0.5, maintain: null, gain: 0.25 };
 const BODIES = [
   [16, 165, 55], [17, 180, 70], [18, 160, 45], [18, 175, 52], [22, 170, 60], [25, 185, 95], [30, 175, 80], [30, 155, 42],
   [35, 162, 68], [40, 190, 130], [45, 150, 38], [55, 168, 75], [65, 158, 50], [70, 172, 90], [100, 120, 30], [20, 230, 300],
+  // Typed with decimals, and a burn so high that gaining goes past 5,000 kcal and the app offers maintenance instead.
+  [33, 171.5, 64.3], [48, 163.2, 77.7], [20, 200, 170],
 ];
 const samples = [];
 for (const [age, heightCm, weightKg] of BODIES) {

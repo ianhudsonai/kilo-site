@@ -813,6 +813,14 @@ await check('the calculator shows the target and the app\'s warnings, and nothin
   // Out of range and missing answers get the app's messages.
   await calculate(v.page, { age: 30, height: 119, weight: '70', activity: 'light' });
   expect((await v.page.locator('#calc .status').textContent()) === CALC_TEXT.pt.badHeight && await v.page.locator('#height').getAttribute('aria-invalid') === 'true', 'height 119 is accepted');
+  // Like the app, a bad height is named before a bad weight.
+  await calculate(v.page, { goal: 'lose', sex: 'male', age: 30, height: 119, weight: '20', activity: 'light' });
+  expect((await v.page.locator('#calc .status').textContent()) === CALC_TEXT.pt.badHeight, 'a bad height and weight name the weight first');
+  // Gaining past 5,000 kcal: the app offers maintenance, and the pace line says so too.
+  await calculate(v.page, { goal: 'gain', sex: 'male', age: 20, height: 200, weight: '170', activity: 'very' });
+  await result.waitFor();
+  expect(await result.locator('[data-kcal]').textContent() === '4.920' && await result.locator('.pace').textContent() === CALC_TEXT.pt.paceMaintain
+    && (await result.innerText()).includes(CALC_TEXT.pt.unsavableMaintenance.replace('{kcal}', '5.200').replace('{maintenance}', '4.920')), `gain past 5,000: ${await result.innerText()}`);
   // The weight a calculator reports is never sent: no request after the page loaded, and the address is unchanged.
   await v.page.waitForTimeout(300);
   expect(requests.length === loaded, `requests after typing: ${requests.slice(loaded).join(', ')}`);
