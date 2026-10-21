@@ -57,7 +57,7 @@ One page per exercise in the app's library (294), plus an index by muscle group,
 Hand-written pages for people who search "MyFitnessPal vale a pena?" or "fatsecret ou Kilo": `comparar/myfitnesspal/` and `comparar/fatsecret/`, each ending with the waitlist box tagged `seo-compare`. Comparative advertising in Brazil must be true, checkable and must not put the other product down, so:
 
 - Every fact about the other app comes from a page actually opened, recorded word for word in the HTML comment at the top of the page, with the date. The page shows that date and links those pages; the check stops if a linked source is missing from the comment.
-- Each page says first what the other app does well, says the Kilo is not out yet, and leaves out anything that could not be checked (prices, ratings, ads where the source says nothing).
+- Each page says first what the other app does well, says the Kilo is not out yet and is not affiliated with the other app, and leaves out anything that could not be checked (prices, ratings, ads where the source says nothing).
 - Kilo's side uses only the approved App Store text.
 - Apps change: re-open the sources, update the facts, the comment and the date together, and re-check at launch.
 

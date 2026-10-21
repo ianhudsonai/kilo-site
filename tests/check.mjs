@@ -870,7 +870,7 @@ await check('each comparison page shows its check date and sources, has its own 
     const comment = html.match(/<!--([\s\S]*?)-->/)[1];
     const links = [...source.matchAll(/href="(https:[^"]+)"/g)].map(m => m[1]);
     expect(links.length > 0 && links.every(link => comment.includes(link)), `/comparar/${app}/ links a source the comment does not record`);
-    expect(/O Kilo ainda não foi lançado/.test(html) && /não tem ligação com/.test(html), `/comparar/${app}/ must say Kilo is not out yet and is not linked to the other app`);
+    expect(/O Kilo ainda não foi lançado/.test(html) && /não é afiliado, patrocinado nem endossado/.test(html), `/comparar/${app}/ must say Kilo is not out yet and is not linked to the other app`);
     expect(html.includes('href="/?origem=seo-compare"'), `/comparar/${app}/ lacks the seo-compare box`);
     for (const [, link] of html.matchAll(/href="(\/[^"#?]+)"/g)) expect(link.startsWith('/assets/') || fs.existsSync(path.join(ROOT, link, 'index.html')), `/comparar/${app}/ links to missing ${link}`);
   }
