@@ -17,7 +17,7 @@
       sending: 'Enviando…',
       consent: 'Só vamos mandar e-mail sobre o lançamento do Kilo. Você pode sair da lista quando quiser.',
       privacy: 'Privacidade',
-      privacyFooter: 'Privacidade da lista de espera',
+      privacyFooter: 'Privacidade do site e da lista',
       doneTitle: 'Pronto!',
       placeTitle: 'Você é o nº\u00a0{n} da fila',
       doneText: 'Você vai ser um dos primeiros a saber quando o Kilo chegar.',
@@ -52,7 +52,7 @@
       extraHealthTitle: 'App Saúde', extraHealth: 'Seus passos do dia vêm do app Saúde. O Kilo só lê, nunca grava nada nele.',
       extraDarkTitle: 'Modo escuro', extraDark: 'Claro ou escuro, como você preferir.',
       extraLangTitle: 'Português e inglês', extraLang: 'Nos dois idiomas, em quilos ou libras.',
-      promiseTitle: 'Sem anúncios, sem rastreamento',
+      promiseTitle: 'No app: sem anúncios, sem rastreamento',
       promise1: 'O app não tem anúncios, não faz análise de uso e não rastreia você.',
       promise2: 'Comece sem cadastro, como convidado. Se criar uma conta, você pode excluí-la com seus dados dentro do app, quando quiser.',
       pricesTitle: 'Quanto custaria tudo isso?',
@@ -68,7 +68,7 @@
       faq3Q: 'Tem para Android?', faq3A: 'Primeiro no iPhone. O Android vem depois: entre na lista e avisamos.',
       faq4Q: 'Preciso criar conta?', faq4A: 'Não. Você pode começar como convidado, sem cadastro.',
       faq5Q: 'Funciona sem internet?', faq5A: 'A busca de alimentos, sim: a tabela TACO e os alimentos dos EUA ficam dentro do app.',
-      faq6Q: 'O que vocês fazem com meus dados?', faq6A: 'No app, nada de anúncios, análise de uso ou rastreamento, e o Kilo só lê do app Saúde. Na lista de espera, usamos seu e-mail só para avisar do lançamento; os detalhes estão na página de privacidade da lista.',
+      faq6Q: 'O que vocês fazem com meus dados?', faq6A: 'No app, nada de anúncios, análise de uso ou rastreamento, e o Kilo só lê do app Saúde. Neste site, contamos as visitas sem cookies e sem saber quem é você. Na lista de espera, usamos seu e-mail só para avisar do lançamento. Os detalhes estão na página de privacidade.',
       gorillaWaveAlt: 'O gorila do Kilo dando oi',
       gorillaNotesAlt: 'O gorila do Kilo de olho no seu progresso',
       gorillaPointAlt: 'O gorila do Kilo convidando você para entrar na lista',
@@ -97,7 +97,7 @@
       sending: 'Sending…',
       consent: 'We will only email you about the Kilo launch. You can leave the list at any time.',
       privacy: 'Privacy',
-      privacyFooter: 'Waitlist privacy',
+      privacyFooter: 'Site and waitlist privacy',
       doneTitle: 'Done!',
       placeTitle: 'You\'re number\u00a0{n} in line',
       doneText: 'You will be one of the first to know when Kilo arrives.',
@@ -132,7 +132,7 @@
       extraHealthTitle: 'Apple Health', extraHealth: 'Your daily steps come from Apple Health. Kilo only reads; it never writes to it.',
       extraDarkTitle: 'Dark mode', extraDark: 'Light or dark, as you like.',
       extraLangTitle: 'English and Portuguese', extraLang: 'In both languages, in kilograms or pounds.',
-      promiseTitle: 'No ads, no tracking',
+      promiseTitle: 'In the app: no ads, no tracking',
       promise1: 'The app has no ads, no analytics and no tracking.',
       promise2: 'Start without signing up, as a guest. If you make an account, you can delete it and your data from inside the app, any time.',
       pricesTitle: 'What would all this cost?',
@@ -148,7 +148,7 @@
       faq3Q: 'Is it on Android?', faq3A: 'iPhone first. Android comes later: join the list and we will let you know.',
       faq4Q: 'Do I need an account?', faq4A: 'No. You can start as a guest, without signing up.',
       faq5Q: 'Does it work offline?', faq5A: 'Food search does: the Brazilian and US food tables are inside the app.',
-      faq6Q: 'What do you do with my data?', faq6A: 'In the app, no ads, no analytics and no tracking, and Kilo only reads from Apple Health. On the waitlist, we use your email only to tell you about the launch; the details are on the waitlist privacy page.',
+      faq6Q: 'What do you do with my data?', faq6A: 'In the app, no ads, no analytics and no tracking, and Kilo only reads from Apple Health. On this site, we count visits without cookies and without knowing who you are. On the waitlist, we use your email only to tell you about the launch. The details are on the privacy page.',
       gorillaWaveAlt: 'The Kilo gorilla saying hi',
       gorillaNotesAlt: 'The Kilo gorilla keeping an eye on your progress',
       gorillaPointAlt: 'The Kilo gorilla inviting you to join the list',
@@ -175,12 +175,23 @@
   // where visits come from, scroll depth and taps on the join buttons, never an email, and only the origem and lang tags of the
   // address. If it is blocked or broken, the page works the same.
   var COUNTER = { src: '', id: '' };
+  // Every address Umami sends (the page and the one before it) keeps only its origem and lang tags, so ad click ids, utm
+  // tags or anything else in a link never reach it. Another site's address is cut down to the site's name. A browser asking
+  // not to be tracked (Do Not Track, handled by Umami, or Global Privacy Control) is not counted at all.
+  function counterAddress(address) {
+    if (!address) return '';
+    var url = new URL(address, location.origin);
+    if (url.origin !== location.origin) return url.origin + '/';
+    var kept = new URLSearchParams();
+    ['origem', 'lang'].forEach(function (key) { if (url.searchParams.has(key)) kept.set(key, url.searchParams.get(key)); });
+    var query = kept.toString();
+    return (/^[a-z][a-z0-9+.-]*:/i.test(address) ? url.origin : '') + url.pathname + (query ? '?' + query : '');
+  }
   window.kiloCounterBeforeSend = function (type, payload) {
     try {
-      var url = new URL(payload.url, location.origin), kept = new URLSearchParams();
-      ['origem', 'lang'].forEach(function (key) { if (url.searchParams.has(key)) kept.set(key, url.searchParams.get(key)); });
-      var query = kept.toString();
-      payload.url = url.pathname + (query ? '?' + query : '');
+      if (navigator.globalPrivacyControl) return null;
+      payload.url = counterAddress(payload.url);
+      if ('referrer' in payload) payload.referrer = counterAddress(payload.referrer);
     } catch (e) { return null; }
     return payload;
   };
