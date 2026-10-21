@@ -182,31 +182,45 @@
     document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
     document.title = t.docTitle;
     document.querySelector('meta[name=description]').setAttribute('content', t.docDescription);
-    // For Google, which runs this script: the English page is its own address, with its own words and FAQ details.
-    var here = 'https://kiloapp.com.br/' + (lang === 'en' ? '?lang=en' : '');
-    document.querySelector('link[rel=canonical]').href = here;
-    document.querySelector('meta[property="og:url"]').content = here;
-    document.querySelector('meta[property="og:title"]').content = t.docTitle;
-    document.querySelector('meta[property="og:description"]').content = t.docDescription;
-    var ld = JSON.parse(document.getElementById('ld').textContent);
-    ld['@graph'].forEach(function (node) {
-      if (node['@type'] === 'MobileApplication') node.description = t.docDescription;
-      if (node['@type'] !== 'FAQPage') return;
-      node.inLanguage = document.documentElement.lang;
-      node.mainEntity.forEach(function (q, i) { q.name = t['faq' + (i + 1) + 'Q']; q.acceptedAnswer.text = t['faq' + (i + 1) + 'A']; });
-    });
-    document.getElementById('ld').textContent = JSON.stringify(ld);
     each('[data-t]', function (el) { el.textContent = t[el.getAttribute('data-t')]; });
     each('[data-t-placeholder]', function (el) { el.placeholder = t[el.getAttribute('data-t-placeholder')]; });
     each('[data-t-alt]', function (el) { el.alt = t[el.getAttribute('data-t-alt')]; });
     each('[data-t-aria]', function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-t-aria')]); });
     each('[data-privacy]', function (el) { el.href = '/lista/privacidade/' + (lang === 'en' ? '?lang=en' : ''); });
+    describe(t);
     toggle.textContent = t.toggle;
     toggle.lang = t.toggleLang;
     boxes.forEach(function (box) {
       box.querySelector('button.join').textContent = box === sendingBox ? t.sending : t.button;
       if (box.dataset.error) showError(box, box.dataset.error);
     });
+  }
+
+  // For Google, which runs this script: the English page is its own address, with its own words and FAQ details. Kept apart and
+  // guarded, so a slip in the details can never stop the visible page from switching language.
+  function describe(t) {
+    try {
+      var here = 'https://kiloapp.com.br/' + (lang === 'en' ? '?lang=en' : '');
+      var canonical = document.querySelector('link[rel=canonical]');
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        document.head.appendChild(canonical);
+      }
+      canonical.href = here;
+      document.querySelector('meta[property="og:url"]').content = here;
+      document.querySelector('meta[property="og:title"]').content = t.docTitle;
+      document.querySelector('meta[property="og:description"]').content = t.docDescription;
+      var ld = document.getElementById('ld');
+      var data = JSON.parse(ld.textContent);
+      data['@graph'].forEach(function (node) {
+        if (node['@type'] === 'WebSite') node.description = t.docDescription;
+        if (node['@type'] !== 'FAQPage') return;
+        node.inLanguage = document.documentElement.lang;
+        node.mainEntity.forEach(function (q, i) { q.name = t['faq' + (i + 1) + 'Q']; q.acceptedAnswer.text = t['faq' + (i + 1) + 'A']; });
+      });
+      ld.textContent = JSON.stringify(data);
+    } catch (e) { /* the page itself is already translated */ }
   }
 
   function clearError(box) {

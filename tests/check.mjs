@@ -578,6 +578,15 @@ await check('Google and link previews get a title, description, share picture an
     return [img.naturalWidth, img.naturalHeight, (await (await fetch('/assets/img/compartilhar.jpg')).blob()).size];
   });
   expect(picture[0] === 1200 && picture[1] === 630 && picture[2] < 300000, `share picture is ${picture.join(' x ')} bytes`);
+  // A broken details block must not stop the page from switching language.
+  await v.page.route(base + '/', async route => {
+    const res = await route.fetch();
+    route.fulfill({ response: res, body: (await res.text()).replace('"@graph": [', '"@graph": [,') });
+  });
+  await v.page.goto(base + '/');
+  await v.page.getByRole('button', { name: 'English' }).click();
+  expect(await v.page.locator('#headline').textContent() === TEXT.en.headline, 'a broken details block stops the English switch');
+  await v.page.unroute(base + '/');
   await v.page.goto(base + '/?lang=en');
   const en = await head();
   expect(en.title === TEXT.en.docTitle && en.description === TEXT.en.docDescription && en.ogTitle === en.title, `English title: ${en.title}`);
@@ -598,7 +607,14 @@ await check('the sitemap lists the public pages, robots points to it, and link p
     expect(!listed.some(url => url.startsWith(`${SITE}/${page}/`) && !url.includes('privacidade')), `sitemap lists /${page}/`);
     const html = fs.readFileSync(path.join(ROOT, page, 'index.html'), 'utf8');
     expect(/<meta name="robots" content="noindex/.test(html), `/${page}/ can show up in search`);
+    // Google: never noindex and a canonical together.
+    expect(!/rel="canonical"/.test(html), `/${page}/ has noindex and a canonical`);
   }
+  for (const page of ['', 'lista/privacidade/']) {
+    expect(!/name="robots"/.test(fs.readFileSync(path.join(ROOT, page, 'index.html'), 'utf8')), `/${page} is in the sitemap but kept out of search`);
+  }
+  // Google: a canonical set by JavaScript must not change one in the HTML, so the HTML has none and site.js adds it.
+  expect(!/rel="canonical"/.test(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')), 'the main page HTML has its own canonical');
 });
 
 await check('the app and FAQ details for Google match the visible page, in both languages', async () => {
@@ -611,11 +627,10 @@ await check('the app and FAQ details for Google match the visible page, in both 
     }));
     const nodes = data.flatMap(d => d['@graph'] || [d]);
     const byType = type => nodes.find(n => n['@type'] === type);
-    const app = byType('MobileApplication'), page = byType('FAQPage');
-    expect(byType('Organization') && byType('WebSite'), `${lang}: no Organization or WebSite`);
-    expect(app && app.name === 'Kilo' && app.operatingSystem === 'iOS' && app.applicationCategory === 'HealthApplication', `${lang}: app details ${JSON.stringify(app)}`);
-    expect(app.offers && app.offers.price === '0' && app.offers.priceCurrency === 'BRL', `${lang}: app price`);
-    expect(!('aggregateRating' in app) && !('review' in app), `${lang}: made-up ratings`);
+    const site = byType('WebSite'), page = byType('FAQPage');
+    expect(site && site.name === 'Kilo' && site.url === SITE + '/' && site.description === (lang === 'en' ? TEXT.en : TEXT.pt).docDescription, `${lang}: site details ${JSON.stringify(site)}`);
+    // App details wait for the App Store listing: Google flags an app without real ratings as an error.
+    expect(!byType('MobileApplication') && !byType('SoftwareApplication') && !JSON.stringify(data).includes('aggregateRating'), `${lang}: app details before launch`);
     expect(page && page.mainEntity.length === faq.length, `${lang}: FAQ details have ${page && page.mainEntity.length} questions, page has ${faq.length}`);
     page.mainEntity.forEach((q, i) => {
       expect(q['@type'] === 'Question' && q.name === faq[i][0] && q.acceptedAnswer.text === faq[i][1], `${lang}: question ${i + 1} differs from the page`);

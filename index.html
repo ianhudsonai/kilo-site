@@ -7,7 +7,7 @@
 <title>Kilo: o app de treino e dieta que aprende com você</title>
 <meta name="description" content="O Kilo sugere a carga da próxima série e, toda semana, um ajuste na sua meta pelo seu progresso real. Treino e dieta no mesmo app, grátis e sem anúncios. Em breve no iPhone: entre na lista de espera.">
 <meta name="referrer" content="no-referrer">
-<link rel="canonical" href="https://kiloapp.com.br/">
+<!-- No canonical here: site.js adds it (/ or /?lang=en). Google asks that JavaScript never change one already in the HTML. -->
 <link rel="alternate" hreflang="pt-BR" href="https://kiloapp.com.br/">
 <link rel="alternate" hreflang="en" href="https://kiloapp.com.br/?lang=en">
 <link rel="alternate" hreflang="x-default" href="https://kiloapp.com.br/">
@@ -24,54 +24,23 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<!-- What Google reads about the app and the questions. The FAQ answers must stay word for word the visible ones (site.js swaps
-     in the English ones on ?lang=en; tests/check.mjs compares both). No ratings until the App Store has real ones. -->
+<!-- What Google reads about the site and the questions. The FAQ answers must stay word for word the visible ones (site.js swaps
+     in the English ones on ?lang=en; tests/check.mjs compares both). App details (MobileApplication) wait for the App Store listing:
+     Google reports an app without real ratings as an error, and ratings are never made up. -->
 <script type="application/ld+json" id="ld">
 {
  "@context": "https://schema.org",
  "@graph": [
   {
-   "@type": "Organization",
-   "@id": "https://kiloapp.com.br/#org",
-   "name": "Kilo",
-   "url": "https://kiloapp.com.br/",
-   "email": "contato@kiloapp.com.br"
-  },
-  {
    "@type": "WebSite",
    "@id": "https://kiloapp.com.br/#site",
    "name": "Kilo",
    "url": "https://kiloapp.com.br/",
-   "inLanguage": [
-    "pt-BR",
-    "en"
-   ],
-   "publisher": {
-    "@id": "https://kiloapp.com.br/#org"
-   }
-  },
-  {
-   "@type": "MobileApplication",
-   "@id": "https://kiloapp.com.br/#app",
-   "name": "Kilo",
-   "alternateName": "Kilo: Treino e Dieta",
    "description": "O Kilo sugere a carga da próxima série e, toda semana, um ajuste na sua meta pelo seu progresso real. Treino e dieta no mesmo app, grátis e sem anúncios. Em breve no iPhone: entre na lista de espera.",
-   "operatingSystem": "iOS",
-   "applicationCategory": "HealthApplication",
    "inLanguage": [
     "pt-BR",
     "en"
-   ],
-   "url": "https://kiloapp.com.br/",
-   "image": "https://kiloapp.com.br/assets/img/compartilhar.jpg",
-   "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "BRL"
-   },
-   "publisher": {
-    "@id": "https://kiloapp.com.br/#org"
-   }
+   ]
   },
   {
    "@type": "FAQPage",
