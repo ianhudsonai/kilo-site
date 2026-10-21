@@ -59,6 +59,8 @@ async function visitor({ viewport = PHONE, reply = { ok: true }, reducedMotion =
   await context.route('**/*', route => {
     const url = route.request().url();
     if (url.startsWith(base)) return route.continue();
+    // Umami's script gets an empty stand-in: the checks never count a visit on the real counter.
+    if (url === 'https://cloud.umami.is/script.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
     if (url === WAITLIST + 'join_waitlist') {
       sent.push(JSON.parse(route.request().postData() || '{}'));
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(typeof reply === 'function' ? reply() : reply) });
@@ -1026,8 +1028,9 @@ await check('the calculator fits a small phone in light and dark mode, and says 
   await n.close();
 });
 
-// The counter is off until ian approves the privacy line: then site.js gets the two values from the Umami tracking code.
-const COUNTER_OFF = "var COUNTER = { src: '', id: '' };";
+// The counter is on: site.js holds the two values from Kilo's Umami tracking code (ian's account, EU region). Every visitor
+// gets an empty stand-in for Umami's script (see visitor()), so the checks never reach Umami; withCounter() swaps in a fake.
+const COUNTER_ON = "var COUNTER = { src: 'https://cloud.umami.is/script.js', id: 'e87ebbf0-b53b-4acc-9c4f-4806fbc2c50a' };";
 // A stand-in for Umami's script that behaves like it where privacy is at stake: it sends a page view at load and on each
 // address change (with the address before it as referrer), passes every send through the page's before-send hook, and
 // records what would leave in window.sentPayloads (and the page's events in window.counted).
@@ -1045,20 +1048,19 @@ const FAKE_UMAMI = `(function () {
     send({ url: location.href, referrer: document.referrer, name: name, data: data });
   } };
 })();`;
-/** Turns the counter on for this page and serves `script` (the stand-in above, by default) as Umami's. */
+/** Serves `script` (the stand-in above, by default) as Umami's for this page. */
 async function withCounter(page, script = FAKE_UMAMI) {
-  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
-  expect(js.includes(COUNTER_OFF), 'site.js has no switched-off counter line');
-  await page.route(base + '/assets/site.js', route => route.fulfill({ contentType: 'text/javascript',
-    body: js.replace(COUNTER_OFF, "var COUNTER = { src: 'https://cloud.umami.is/script.js', id: '00000000-test' };") }));
   await page.route('https://cloud.umami.is/script.js', route => script === null ? route.abort() : route.fulfill({ contentType: 'text/javascript', body: script }));
 }
 
-await check('the visitor counter is off until approved: nothing loads and nothing is counted', async () => {
+await check('the visitor counter is on, set to Kilo\'s Umami site, and loads once, from Umami only', async () => {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/site.js'), 'utf8');
+  expect(js.includes(COUNTER_ON), 'site.js does not hold Kilo\'s Umami tracking code');
   const v = await visitor();
   await v.page.goto(base + '/');
   await v.page.waitForTimeout(800);
-  expect(await v.page.locator('script[data-website-id]').count() === 0, 'a counter script is on the page');
+  const tags = await v.page.locator('script[data-website-id]').evaluateAll(els => els.map(el => el.src));
+  expect(tags.length === 1 && tags[0] === 'https://cloud.umami.is/script.js', `counter scripts: ${JSON.stringify(tags)}`);
   expect(v.leaks.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
   await v.close();
 });
@@ -1069,7 +1071,7 @@ await check('when switched on, the counter loads cookie-free from Umami and coun
   await v.page.goto(base + '/?origem=ig-treino&t=segredo');
   const tag = await v.page.locator('script[data-website-id]').evaluate(el => ({
     src: el.src, id: el.dataset.websiteId, domains: el.dataset.domains, dnt: el.dataset.doNotTrack, before: el.dataset.beforeSend, defer: el.defer }));
-  expect(tag.src === 'https://cloud.umami.is/script.js' && tag.id === '00000000-test' && tag.domains === 'kiloapp.com.br' && tag.dnt === 'true' && tag.defer, `script tag ${JSON.stringify(tag)}`);
+  expect(tag.src === 'https://cloud.umami.is/script.js' && tag.id === 'e87ebbf0-b53b-4acc-9c4f-4806fbc2c50a' && tag.domains === 'kiloapp.com.br' && tag.dnt === 'true' && tag.defer, `script tag ${JSON.stringify(tag)}`);
   await v.page.waitForFunction(() => window.umami, null, { timeout: TIMEOUT });
   await join(v.page, 'nao-conta@exemplo.com');
   await v.page.getByText('Pronto!').first().waitFor({ timeout: 4000 });

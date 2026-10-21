@@ -172,11 +172,11 @@
   // The tag in the link (?origem=ig-treino) says which account brought the person; the database keeps only well-formed tags.
   var origem = (params.get('origem') || '').trim().toLowerCase().slice(0, 40) || null;
 
-  // The visitor counter: Umami Cloud, cookie-free, data in its EU region. Off until ian approves the line about it on the waitlist
-  // privacy page; then src and id get the two values from Umami's tracking code. Nothing loads while id is empty. It counts pages,
-  // where visits come from, scroll depth and taps on the join buttons, never an email, and only the origem and lang tags of the
-  // address. If it is blocked or broken, the page works the same.
-  var COUNTER = { src: '', id: '' };
+  // The visitor counter: Umami Cloud, cookie-free, data in its EU region (Frankfurt), described on the privacy page. src and id
+  // are the two values from Umami's tracking code; nothing loads while id is empty. It counts pages, where visits come from,
+  // scroll depth and taps on the join buttons, never an email, and only the origem and lang tags of the address. If it is
+  // blocked or broken, the page works the same.
+  var COUNTER = { src: 'https://cloud.umami.is/script.js', id: 'e87ebbf0-b53b-4acc-9c4f-4806fbc2c50a' };
   // Every address Umami sends (the page and the one before it) keeps only its origem and lang tags, so ad click ids, utm
   // tags or anything else in a link never reach it. Another site's address is cut down to the site's name. A browser asking
   // not to be tracked (Do Not Track, handled by Umami, or Global Privacy Control) is not counted at all.
