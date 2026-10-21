@@ -190,10 +190,7 @@
     each('[data-t-alt]', function (el) { el.alt = t[el.getAttribute('data-t-alt')]; });
     each('[data-t-aria]', function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-t-aria')]); });
     each('[data-privacy]', function (el) { el.href = '/lista/privacidade/' + (lang === 'en' ? '?lang=en' : ''); });
-    if (place) {
-      var number = place.toLocaleString(lang === 'en' ? 'en-US' : 'pt-BR');
-      each('.join-done h2', function (el) { el.textContent = t.placeTitle.replace('{n}', number); });
-    }
+    renderPlace(t);
     describe(t);
     toggle.textContent = t.toggle;
     toggle.lang = t.toggleLang;
@@ -201,6 +198,13 @@
       box.querySelector('button.join').textContent = box === sendingBox ? t.sending : t.button;
       if (box.dataset.error) showError(box, box.dataset.error);
     });
+  }
+
+  // "Você é o nº 1.234 da fila" in the done boxes, once the join answer has given a place in line.
+  function renderPlace(t) {
+    if (!place) return;
+    var number = place.toLocaleString(lang === 'en' ? 'en-US' : 'pt-BR');
+    each('.join-done h2', function (el) { el.textContent = t.placeTitle.replace('{n}', number); });
   }
 
   // For Google, which runs this script: the English page is its own address, with its own words and FAQ details. Kept apart and
@@ -291,7 +295,7 @@
         if (result.ok && result.body && result.body.ok === true) {
           // The place in line, when the server sends one (after migration 00058); otherwise the plain "Pronto!".
           var n = result.body.position;
-          if (typeof n === 'number' && Number.isInteger(n) && n >= 1 && n < 1e9) { place = n; apply(); }
+          if (typeof n === 'number' && Number.isInteger(n) && n >= 1 && n < 1e9) { place = n; renderPlace(TEXT[lang]); }
           showDone(box);
           return;
         }

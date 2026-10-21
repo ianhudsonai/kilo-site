@@ -155,6 +155,17 @@ await check('a join answer with a place in line says "Você é o nº X da fila",
   await v.page.getByText("You're number 1,234 in line").first().waitFor({ timeout: 2000 })
     .catch(() => { throw new Error('the place in line is not in English'); });
   await v.close();
+  // Switched to English first, and back to Portuguese after.
+  const e = await visitor({ reply: { ok: true, position: 1234 } });
+  await e.page.goto(base + '/');
+  await e.page.getByRole('button', { name: 'English' }).click();
+  await join(e.page, 'fila@exemplo.com');
+  await e.page.getByText("You're number 1,234 in line").first().waitFor({ timeout: 4000 })
+    .catch(() => { throw new Error('no place in line when joining in English'); });
+  await e.page.getByRole('button', { name: 'Português' }).click();
+  await e.page.getByText('Você é o nº 1.234 da fila').first().waitFor({ timeout: 2000 })
+    .catch(() => { throw new Error('the place in line does not switch back to Portuguese'); });
+  await e.close();
   // Anything but a whole number from 1 up shows the plain Pronto (the answer before the server change, or a broken one).
   for (const position of [undefined, 0, -3, 2.5, '12', null, 1e12]) {
     const w = await visitor({ reply: { ok: true, position } });
