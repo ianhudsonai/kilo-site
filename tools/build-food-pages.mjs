@@ -27,15 +27,26 @@ const kcal = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
  * The table's name as people say it, for headings, titles and addresses: "Arroz, integral, cozido" is "Arroz integral
  * cozido", "Coco, água de" is "Água de coco", and the table's footnote marks ("Cerveja, pilsen 2") are dropped.
  */
-// Names the general rule below can't turn into Portuguese people say, by the table's food number.
-const SAID = { 14: 'Mistura para bolo', 30: 'Mistura para curau de milho verde', 472: 'Aguardente de cana' };
+// Names the general rules below can't turn into Portuguese people say, by the table's food number.
+const SAID = {
+  7: 'Aveia em flocos crua', 14: 'Mistura para bolo', 21: 'Flocos de milho com sal', 22: 'Flocos de milho sem sal', 30: 'Mistura para curau de milho verde',
+  48: 'Pão de forma de aveia', 50: 'Pão de forma de glúten', 51: 'Pão de forma de milho', 52: 'Pão de forma integral', 53: 'Pão francês', 54: 'Pão sovado',
+  159: 'Molho de tomate industrializado', 171: 'Ameixa em calda enlatada', 173: 'Ameixa em calda enlatada drenada', 472: 'Aguardente de cana',
+  535: 'Molho cuxá', 584: 'Tofu (queijo de soja)',
+};
+// "Laranja, baía, suco" is "Suco de laranja baía"; "Achocolatado, pó" is "Achocolatado em pó".
+const KIND = /^(suco|polpa|extrato|purê|farinha|semente)\b/;
 /** The table's footnote mark at the end of a name ("Cerveja, pilsen 2"), which the pages don't carry. */
 const unmarked = name => name.replace(/(?<!tipo) \d$/, '');
 function plain(food) {
   if (SAID[food.id]) return SAID[food.id];
   let parts = unmarked(food.name).split(/\s*,\s*/);
-  if (parts.length === 2 && / (de|para)$/.test(parts[1])) parts = [parts[1], parts[0].toLowerCase()];
-  const text = parts.join(' ').replace(/\s+/g, ' ').trim();
+  const powder = parts.slice(1).includes('pó');
+  if (powder) parts = parts.filter((part, i) => i === 0 || part !== 'pó');
+  const kind = parts.findIndex((part, i) => i > 0 && KIND.test(part));
+  if (kind > 0) parts = [`${parts[kind]} de ${parts[0].toLowerCase()}`, ...parts.slice(1).filter((part, i) => i + 1 !== kind)];
+  else if (parts.length === 2 && / (de|para)$/.test(parts[1])) parts = [parts[1], parts[0].toLowerCase()];
+  const text = parts.join(' ').replace(/\s+/g, ' ').trim() + (powder ? ' em pó' : '');
   return text[0].toUpperCase() + text.slice(1);
 }
 const slugOf = name => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/%/g, ' por cento ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -84,7 +95,7 @@ function head({ title, description, url }) {
 
 const joinCard = lead => `  <section class="join-card" aria-labelledby="join-title">
     <h2 id="join-title">O Kilo registra isso com um toque</h2>
-    <p>${lead} A Tabela TACO já vem dentro do app, a busca funciona sem internet, e os alimentos que você mais usa aparecem primeiro em cada refeição.</p>
+    <p>${lead} A Tabela TACO já vem dentro do app, a busca funciona sem internet e os alimentos que você mais usa aparecem primeiro em cada refeição.</p>
     <a class="cta" href="/?origem=${TAG}">Entrar na lista de espera</a>
     <p class="small">Grátis, sem anúncios. Primeiro no iPhone.</p>
   </section>

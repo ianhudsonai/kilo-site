@@ -24,7 +24,7 @@
   <url><loc>https://kiloapp.com.br/alimentos/arroz-tipo-1-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/arroz-tipo-2-cozido/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/arroz-tipo-2-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/aveia-flocos-crua/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/aveia-em-flocos-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/biscoito-doce-maisena/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/biscoito-doce-recheado-com-chocolate/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/biscoito-doce-recheado-com-morango/</loc></url>
@@ -38,14 +38,14 @@
   <url><loc>https://kiloapp.com.br/alimentos/bolo-pronto-milho/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/canjica-branca-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/canjica-com-leite-integral/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/cereais-milho-flocos-com-sal/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/cereais-milho-flocos-sem-sal/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/flocos-de-milho-com-sal/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/flocos-de-milho-sem-sal/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cereais-mingau-milho-infantil/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cereais-mistura-para-vitamina-trigo-cevada-e-aveia/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cereal-matinal-milho/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cereal-matinal-milho-acucar/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/creme-de-arroz-po/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/creme-de-milho-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/creme-de-arroz-em-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/creme-de-milho-em-po/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/curau-milho-verde/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/mistura-para-curau-de-milho-verde/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/farinha-de-arroz-enriquecida/</loc></url>
@@ -63,15 +63,15 @@
   <url><loc>https://kiloapp.com.br/alimentos/milho-fuba-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/milho-verde-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/milho-verde-enlatado-drenado/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/mingau-tradicional-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/mingau-tradicional-em-po/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pamonha-barra-para-cozimento-pre-cozida/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pao-aveia-forma/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/pao-de-forma-de-aveia/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pao-de-soja/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pao-gluten-forma/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pao-milho-forma/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pao-trigo-forma-integral/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pao-trigo-frances/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pao-trigo-sovado/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/pao-de-forma-de-gluten/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/pao-de-forma-de-milho/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/pao-de-forma-integral/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/pao-frances/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/pao-sovado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pastel-de-carne-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pastel-de-carne-frito/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pastel-de-queijo-cru/</loc></url>
@@ -175,20 +175,20 @@
   <url><loc>https://kiloapp.com.br/alimentos/serralha-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/taioba-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tomate-com-semente-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/tomate-extrato/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/tomate-molho-industrializado/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/extrato-de-tomate/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/molho-de-tomate-industrializado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tomate-pure/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tomate-salada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/vagem-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/abacate-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/abacaxi-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/abacaxi-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-abacaxi-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/abiu-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/acai-polpa-com-xarope-de-guarana-e-glucose/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/acai-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-acai-com-xarope-de-guarana-e-glucose/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-acai-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/acerola-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/acerola-polpa-congelada/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/ameixa-calda-enlatada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-acerola-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/ameixa-em-calda-enlatada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/ameixa-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/ameixa-em-calda-enlatada-drenada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/atemoia-crua/</loc></url>
@@ -202,15 +202,15 @@
   <url><loc>https://kiloapp.com.br/alimentos/banana-prata-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cacau-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/caja-manga-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/caja-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-caja-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/caju-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/caju-polpa-congelada/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/caju-suco-concentrado-envasado/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-caju-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-concentrado-de-caju-envasado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/caqui-chocolate-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/carambola-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/ciriguela-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cupuacu-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/cupuacu-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-cupuacu-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/figo-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/figo-enlatado-em-calda/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/fruta-pao-crua/</loc></url>
@@ -219,24 +219,24 @@
   <url><loc>https://kiloapp.com.br/alimentos/goiaba-doce-cascao/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/goiaba-vermelha-com-casca-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/graviola-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/graviola-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-graviola-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/jabuticaba-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/jaca-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/jambo-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/jamelao-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/kiwi-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/laranja-baia-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/laranja-baia-suco/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-laranja-baia/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/laranja-da-terra-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/laranja-da-terra-suco/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-laranja-da-terra/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/laranja-lima-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/laranja-lima-suco/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-laranja-lima/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/laranja-pera-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/laranja-pera-suco/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-laranja-pera/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/laranja-valencia-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/laranja-valencia-suco/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/limao-cravo-suco/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/limao-galego-suco/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-laranja-valencia/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-limao-cravo/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-limao-galego/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/limao-tahiti-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/maca-argentina-com-casca-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/maca-fuji-com-casca-crua/</loc></url>
@@ -247,11 +247,11 @@
   <url><loc>https://kiloapp.com.br/alimentos/mamao-verde-doce-em-calda-drenado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/manga-haden-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/manga-palmer-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/manga-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-manga-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/manga-tommy-atkins-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/maracuja-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/maracuja-polpa-congelada/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/maracuja-suco-concentrado-envasado/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-maracuja-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-concentrado-de-maracuja-envasado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/melancia-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/melao-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/mexerica-murcote-crua/</loc></url>
@@ -265,17 +265,17 @@
   <url><loc>https://kiloapp.com.br/alimentos/pessego-enlatado-em-calda/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pinha-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pitanga-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/pitanga-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-pitanga-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/roma-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tamarindo-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tangerina-ponca-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/tangerina-ponca-suco/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-de-tangerina-ponca/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tucuma-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/umbu-cru/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/umbu-polpa-congelada/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/polpa-de-umbu-congelada/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/uva-italia-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/uva-rubi-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/uva-suco-concentrado-envasado/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/suco-concentrado-de-uva-envasado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/azeite-de-dende/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/azeite-de-oliva-extra-virgem/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/manteiga-com-sal/</loc></url>
@@ -472,8 +472,8 @@
   <url><loc>https://kiloapp.com.br/alimentos/leite-condensado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/leite-de-cabra/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/leite-de-vaca-achocolatado/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/leite-de-vaca-desnatado-po/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/leite-de-vaca-integral-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/leite-de-vaca-desnatado-em-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/leite-de-vaca-integral-em-po/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/leite-fermentado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/queijo-minas-frescal/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/queijo-minas-meia-cura/</loc></url>
@@ -505,7 +505,7 @@
   <url><loc>https://kiloapp.com.br/alimentos/ovo-de-galinha-inteiro-cozido-10minutos/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/ovo-de-galinha-inteiro-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/ovo-de-galinha-inteiro-frito/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/achocolatado-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/achocolatado-em-po/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/acucar-cristal/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/acucar-mascavo/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/acucar-refinado/</loc></url>
@@ -525,11 +525,11 @@
   <url><loc>https://kiloapp.com.br/alimentos/melado/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/quindim/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/rapadura/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/cafe-po-torrado/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/capuccino-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/cafe-torrado-em-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/capuccino-em-po/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/fermento-em-po-quimico/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/fermento-biologico-levedura-tablete/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/gelatina-sabores-variados-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/gelatina-sabores-variados-em-po/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/shoyu/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tempero-a-base-de-sal/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/azeitona-preta-conserva/</loc></url>
@@ -547,7 +547,7 @@
   <url><loc>https://kiloapp.com.br/alimentos/charuto-de-repolho/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cuscuz-de-milho-cozido-com-sal/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/cuscuz-paulista/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/cuxa-molho/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/molho-cuxa/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/dobradinha/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/estrogonofe-de-carne/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/estrogonofe-de-frango/</loc></url>
@@ -593,10 +593,10 @@
   <url><loc>https://kiloapp.com.br/alimentos/lentilha-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pacoca-amendoim/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pe-de-moleque-amendoim/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/soja-farinha/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/soja-extrato-soluvel-natural-fluido/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/soja-extrato-soluvel-po/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/soja-queijo-tofu/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/farinha-de-soja/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/extrato-soluvel-de-soja-natural-fluido/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/extrato-soluvel-de-soja-em-po/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/tofu-queijo-de-soja/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tremoco-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/tremoco-em-conserva/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/amendoa-torrada-salgada/</loc></url>
@@ -604,8 +604,8 @@
   <url><loc>https://kiloapp.com.br/alimentos/castanha-do-brasil-crua/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/coco-cru/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/farinha-de-mesocarpo-de-babacu-crua/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/gergelim-semente/</loc></url>
-  <url><loc>https://kiloapp.com.br/alimentos/linhaca-semente/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/semente-de-gergelim/</loc></url>
+  <url><loc>https://kiloapp.com.br/alimentos/semente-de-linhaca/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pinhao-cozido/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/pupunha-cozida/</loc></url>
   <url><loc>https://kiloapp.com.br/alimentos/noz-crua/</loc></url>
