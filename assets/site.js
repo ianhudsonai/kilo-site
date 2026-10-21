@@ -429,6 +429,7 @@
     function stop() {
       if (done) return;
       done = true;
+      seen.disconnect();
       clearTimeout(timer);
       box.classList.remove('waiting', 'turning');
       [canvas, first, holder].forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
@@ -454,7 +455,9 @@
       loop();
     }
     function start() {
-      box.classList.add('waiting');
+      // The back's picture started loading with the page; the still hides only once it is there to cover for it.
+      var cover = function () { if (!done && !shown) box.classList.add('waiting'); };
+      if (first.complete && first.naturalWidth) cover(); else first.addEventListener('load', cover);
       box.appendChild(first);
       box.appendChild(holder);
       video.preload = 'auto';
@@ -466,12 +469,18 @@
       video.addEventListener('error', stop);
       video.lastChild.addEventListener('error', stop);
       video.load();
-      var started = video.play();
-      if (started && started.catch) started.catch(stop);
+      var playing = video.play();
+      if (playing && playing.catch) playing.catch(stop);
     }
+    // Starts the first time the phone is on screen. Scrolled away mid-turn, it skips to the still: no drawing nobody sees.
+    var started = false;
     var seen = new IntersectionObserver(function (entries) {
-      if (!entries[0].isIntersecting) return;
-      seen.disconnect();
+      if (!entries[0].isIntersecting) {
+        if (started) { seen.disconnect(); stop(); }
+        return;
+      }
+      if (started) return;
+      started = true;
       start();
     }, { threshold: 0.1 });
     seen.observe(box);

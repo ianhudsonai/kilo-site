@@ -463,7 +463,7 @@ await check('the hero phone turns from its back to its front once it is on scree
   expect(log.some(e => e.cls.includes('waiting') && e.first), `the back of the phone did not stand in while the video loaded: ${JSON.stringify(log)}`);
   const from = log.find(e => e.cls.includes('turning') && e.canvas).t;
   const to = log.find(e => e.t > from && e.cls === 'phone-3d').t;
-  expect(to - from > 1000, `the turn lasted ${Math.round(to - from)} ms; the video is 1.4 s, so it stopped early`);
+  expect(to - from > 2200, `the turn lasted ${Math.round(to - from)} ms; the video is 2.7 s, so it stopped early`);
   const still = await v.page.locator('.phone-3d .phone-still').evaluate(el => ({ opacity: getComputedStyle(el).opacity, left: el.parentNode.children.length }));
   expect(still.opacity === '1' && still.left === 1, `after the turn the box holds ${still.left} elements and the still's opacity is ${still.opacity}`);
   expect(v.leaks.length === 0, `requests left localhost: ${v.leaks.join(', ')}`);
