@@ -48,6 +48,7 @@ One page per TACO food the app ships (591), plus an index by category, for peopl
 One page per exercise in the app's library (294), plus an index by muscle group, for people who search how to do an exercise. Each shows the Portuguese name, the muscle group, the English name, the app's own how-to tip with a safety line, and a box that opens the main page's form tagged `seo-exercise`. The pages are generated; don't edit them by hand.
 
 - `data/exercises.json` is a copy of the app's exercise library (its database migrations 00031 to 00039, checked against the tips bundled in the app), with the app commit it came from. When the library changes, rerun `node tools/copy-exercise-data.mjs /path/to/fitness-app` from a clean app checkout, then `node tools/build-pages.mjs`.
+- An exercise's address never changes, even if the app renames it: `data/exercise-addresses.json` keeps the address each app exercise (by its app slug) was first given. The builder adds new exercises to it; commit it with the pages.
 - Source and licence: the library and its tips were written for Kilo ("written fresh; no third-party data", migration 00031), so no outside credit is needed. The tips are general technique reminders, not a prescription, and every page says so.
 - The box claims only what the approved App Store text says: the suggested weight for the next set, the last numbers filled in, and each exercise's history and chart.
 

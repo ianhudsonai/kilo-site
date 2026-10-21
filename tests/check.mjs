@@ -763,6 +763,7 @@ await check('a food page reads well on a phone in light and dark mode, and its b
 const LIBRARY = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/exercises.json'), 'utf8'));
 const EXERCISE_DIR = path.join(ROOT, 'exercicios');
 const exercisePages = fs.readdirSync(EXERCISE_DIR, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name);
+const ADDRESSES = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/exercise-addresses.json'), 'utf8'));
 const unescape = text => text.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
 await check('every exercise in the app has one page with the app\'s name and tip, its own title and description, and the seo-exercise box', async () => {
@@ -776,7 +777,10 @@ await check('every exercise in the app has one page with the app\'s name and tip
     expect(exercise && !seen.has(exercise.slug), `/exercicios/${slug}/ does not match exactly one exercise (${name})`);
     seen.add(exercise.slug);
     expect(unescape(html.match(/<p data-tip>([^<]+)<\/p>/)[1]) === exercise.tipPt, `/exercicios/${slug}/ tip differs from the app`);
-    expect(html.includes(`<span lang="en">${exercise.nameEn.replace(/&/g, '&amp;')}</span>`), `/exercicios/${slug}/ lacks the English name`);
+    // The English name shows unless the Portuguese name already says it ("Burpee").
+    const english = exercise.namePt.toLowerCase().includes(exercise.nameEn.toLowerCase()) ? null : exercise.nameEn;
+    expect(english ? html.includes(`<span lang="en">${english.replace(/&/g, '&amp;')}</span>`) : !html.includes('Em inglês'), `/exercicios/${slug}/ English name`);
+    expect(slug === ADDRESSES[exercise.slug], `/exercicios/${slug}/ is not the address kept for ${exercise.slug}`);
     expect(html.includes('Feito um lado de cada vez.') === exercise.unilateral, `/exercicios/${slug}/ one-side note`);
     const title = unescape(html.match(/<title>([^<]+)<\/title>/)[1]), description = unescape(html.match(/<meta name="description" content="([^"]+)">/)[1]);
     expect(!titles.has(title) && !descriptions.has(description), `/exercicios/${slug}/ repeats a title or description`);
@@ -788,15 +792,19 @@ await check('every exercise in the app has one page with the app\'s name and tip
     for (const [, link] of html.matchAll(/href="(\/(?:exercicios|alimentos)\/[^"#]*)/g)) expect(fs.existsSync(path.join(ROOT, link, 'index.html')), `/exercicios/${slug}/ links to missing ${link}`);
   }
   expect(seen.size === LIBRARY.exercises.length, 'some exercises have no page');
-  // The copy matches the app's own words; these were read off the app repo by hand (00031, 00037 and 00039).
+  // The copy matches the app's own words; these were read off the app repo by hand (00031 and 00037).
   const APP = [
     ['barbell-bench-press', 'Supino Reto com Barra', 'Deite com os olhos sob a barra, pés firmes e escápulas juntas. Desça a barra até o meio do peito com os antebraços na vertical e empurre para cima e um pouco para trás. Use um auxiliar ou travas de segurança para a barra não prender você.'],
+    ['farmers-carry', 'Caminhada do Fazendeiro', 'Escolha pesos que você consiga carregar sem inclinar o corpo, fique ereto e caminhe com passos curtos e firmes. Mantenha os ombros para trás e a pegada forte; apoie os pesos no chão com a coluna reta.', "Farmer's Carry"],
     ['deadlift', 'Levantamento Terra', 'Barra sobre o meio do pé, quadril para trás, coluna reta e barra junto às pernas. Empurre o chão, fique de pé e desça flexionando o quadril. Mantenha a coluna reta o tempo todo e comece leve até o movimento ficar fluido.'],
   ];
-  for (const [slug, namePt, tipPt] of APP) {
+  for (const [slug, namePt, tipPt, nameEn] of APP) {
     const exercise = LIBRARY.exercises.find(e => e.slug === slug);
-    expect(exercise && exercise.namePt === namePt && exercise.tipPt === tipPt, `${slug} differs from the app: ${JSON.stringify(exercise)}`);
+    expect(exercise && exercise.namePt === namePt && exercise.tipPt === tipPt && (!nameEn || exercise.nameEn === nameEn), `${slug} differs from the app: ${JSON.stringify(exercise)}`);
   }
+  // An address, once given, stays: every exercise keeps one, and no two exercises share one.
+  expect(LIBRARY.exercises.every(e => ADDRESSES[e.slug]) && new Set(Object.values(ADDRESSES)).size === Object.keys(ADDRESSES).length, 'data/exercise-addresses.json misses an exercise or repeats an address');
+  expect(ADDRESSES['barbell-bench-press'] === 'supino-reto-com-barra' && ADDRESSES['farmers-carry'] === 'caminhada-do-fazendeiro', 'a kept address changed');
   expect(/^[a-z0-9][a-z0-9-]{0,39}$/.test('seo-exercise'), 'seo-exercise is not a valid tag');
   return `${exercisePages.length} pages, app commit ${LIBRARY.source.commit.slice(0, 7)}`;
 });

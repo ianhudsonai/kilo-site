@@ -197,21 +197,27 @@ ${groups.map(c => `  <section class="group" id="${c.slug}" aria-labelledby="h-${
 
 // ---- Exercises ----
 
-// The app's muscle groups, in the order the index shows them, with the Portuguese the app's filter uses.
-// "other" holds cardio, mobility and whole-body moves, which the app labels "Outros".
+// The app's muscle groups, in the order the index shows them, with the Portuguese the app's filter uses and the words for
+// "exercises for ...". "other" holds cardio, mobility and whole-body moves, which the app labels "Outros".
 const MUSCLES = [
-  ['chest', 'Peito'], ['back', 'Costas'], ['shoulders', 'Ombros'], ['biceps', 'Bíceps'], ['triceps', 'Tríceps'], ['forearms', 'Antebraços'],
-  ['quads', 'Quadríceps'], ['hamstrings', 'Posteriores de coxa'], ['glutes', 'Glúteos'], ['calves', 'Panturrilhas'], ['core', 'Core e abdômen'],
-  ['other', 'Cardio e outros'],
+  ['chest', 'Peito', 'o peito'], ['back', 'Costas', 'as costas'], ['shoulders', 'Ombros', 'os ombros'], ['biceps', 'Bíceps', 'o bíceps'],
+  ['triceps', 'Tríceps', 'o tríceps'], ['forearms', 'Antebraços', 'os antebraços'], ['quads', 'Quadríceps', 'o quadríceps'],
+  ['hamstrings', 'Posteriores de coxa', 'os posteriores de coxa'], ['glutes', 'Glúteos', 'os glúteos'], ['calves', 'Panturrilhas', 'as panturrilhas'],
+  ['core', 'Core e abdômen', 'o core e o abdômen'], ['other', 'Cardio e outros', null],
 ];
-const muscles = new Map(MUSCLES.map(([key, label]) => [key, { key, label, slug: slugOf(label), exercises: [] }]));
+const muscles = new Map(MUSCLES.map(([key, label, forWhat]) => [key, { key, label, forWhat, slug: slugOf(label), exercises: [] }]));
+// An exercise's address never changes, even if the app renames it: data/exercise-addresses.json keeps the address each app
+// exercise (by its slug) was first given, and only exercises new to the library get one made from their Portuguese name.
+const ADDRESSES = path.join(ROOT, 'data/exercise-addresses.json');
+const addresses = fs.existsSync(ADDRESSES) ? JSON.parse(fs.readFileSync(ADDRESSES, 'utf8')) : {};
 const exerciseSlugs = new Set();
 const exercises = library.exercises.map(exercise => {
   const group = muscles.get(exercise.muscle);
   if (!group) throw new Error(`${exercise.slug} has muscle group "${exercise.muscle}", which the pages don't know; add it to MUSCLES`);
-  const slug = slugOf(exercise.namePt);
-  if (exerciseSlugs.has(slug)) throw new Error(`two exercises would share /${EXERCISES}/${slug}/ (${exercise.namePt})`);
+  const slug = addresses[exercise.slug] ?? slugOf(exercise.namePt);
+  if (exerciseSlugs.has(slug)) throw new Error(`two exercises would share /${EXERCISES}/${slug}/ (${exercise.namePt}); set one by hand in data/exercise-addresses.json`);
   exerciseSlugs.add(slug);
+  addresses[exercise.slug] = slug;
   const page = { ...exercise, url: `/${EXERCISES}/${slug}/`, pageSlug: slug };
   group.exercises.push(page);
   return page;
@@ -227,32 +233,37 @@ const exerciseCard = lead => joinCard({
 const exerciseRow = exercise => `<li><a href="${exercise.url}"><b>${escape(exercise.namePt)}</b></a></li>`;
 const SAFETY = 'Dicas gerais de técnica, não uma prescrição. Comece leve e pare se sentir dor.';
 const firstSentence = text => text.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? text;
+const lowerFirst = text => text[0].toLowerCase() + text.slice(1);
+/** The English name, unless the Portuguese name already says it ("Burpee", "Air Bike (Assault Bike)"). */
+const englishName = exercise => (exercise.namePt.toLowerCase().includes(exercise.nameEn.toLowerCase()) ? null : exercise.nameEn);
 
 function exercisePage(exercise) {
   const group = muscles.get(exercise.muscle);
   const n = exercise.namePt;
   const title = [`${n}: como fazer · Kilo`, `${n}: como fazer`].find(t => t.length <= 60) ?? n;
   // Google shows about 160 characters: the name, then the tip's first step when it fits.
-  const tipped = `Como fazer ${n}: ${firstSentence(exercise.tipPt)}`;
-  const description = tipped.length <= 160 ? tipped : `Como fazer ${n} (${exercise.nameEn}), exercício de ${group.label.toLowerCase()}: dica de execução e exercícios parecidos.`;
+  const tipped = `Como fazer ${n}: ${lowerFirst(firstSentence(exercise.tipPt))}`;
+  const description = tipped.length <= 160 ? tipped
+    : `Como fazer ${n}${group.forWhat ? `, exercício para ${group.forWhat}` : ''}: uma dica curta de execução e exercícios parecidos.`;
+  const english = englishName(exercise);
   return head({ title, description, url: exercise.url })
     + crumbs([['Kilo', '/'], ['Exercícios', `/${EXERCISES}/`], [group.label, `/${EXERCISES}/#${group.slug}`]])
     + `  <main>
   <h1>${escape(n)}</h1>
-  <p class="sub">Grupo muscular: <span data-muscle>${escape(group.label)}</span>. Em inglês: <span lang="en">${escape(exercise.nameEn)}</span>.${exercise.unilateral ? ' Feito um lado de cada vez.' : ''}</p>
+  <p class="sub">Grupo muscular: <span data-muscle>${escape(group.label)}</span>.${english ? ` Em inglês: <span lang="en">${escape(english)}</span>.` : ''}${exercise.unilateral ? ' Feito um lado de cada vez.' : ''}</p>
   <section class="facts how" aria-labelledby="how-title">
     <h2 id="how-title">Como fazer</h2>
     <p data-tip>${escape(exercise.tipPt)}</p>
     <p class="na">${SAFETY}</p>
   </section>
-${exerciseCard(`${escape(n)} já vem no app, com esta dica.`)}
+${exerciseCard('Este exercício já está no app, com esta dica.')}
   <section class="more" aria-labelledby="more-title">
-    <h2 id="more-title">Mais exercícios de ${escape(group.label.toLowerCase())}</h2>
+    <h2 id="more-title">${group.forWhat ? `Mais exercícios para ${escape(group.forWhat)}` : `Mais exercícios: ${escape(group.label.toLowerCase())}`}</h2>
     <ul class="list">${nearest(group.exercises, exercise).map(exerciseRow).join('')}</ul>
     <p><a href="/${EXERCISES}/">Ver todos os ${exercises.length} exercícios</a></p>
   </section>
   </main>
-` + footer(`${SAFETY} O Kilo é uma ferramenta de registro e não substitui orientação de um profissional de educação física ou de um médico.`);
+` + footer('O Kilo é uma ferramenta de registro e não substitui orientação de um profissional de educação física ou de um médico.');
 }
 
 function exerciseIndex() {
@@ -273,7 +284,7 @@ ${groups.map(g => `  <section class="group" id="${g.slug}" aria-labelledby="h-${
     <ul class="list">${alphabetical(g.exercises).map(exerciseRow).join('')}</ul>
   </section>
 `).join('')}  </main>
-` + footer(`${SAFETY} O Kilo é uma ferramenta de registro e não substitui orientação de um profissional de educação física ou de um médico.`);
+` + footer('O Kilo é uma ferramenta de registro e não substitui orientação de um profissional de educação física ou de um médico.');
 }
 
 // ---- Writing ----
@@ -288,6 +299,7 @@ function writeFolder(dir, pages) {
 }
 writeFolder(FOODS, [['', foodIndex()], ...foods.map(food => [food.slug, foodPage(food)])]);
 writeFolder(EXERCISES, [['', exerciseIndex()], ...exercises.map(exercise => [exercise.pageSlug, exercisePage(exercise)])]);
+fs.writeFileSync(ADDRESSES, '{\n' + Object.entries(addresses).map(([slug, page]) => `  ${JSON.stringify(slug)}: ${JSON.stringify(page)}`).join(',\n') + '\n}\n');
 
 // Each folder's part of the sitemap sits between two marker comments; everything else in it is hand-written.
 const sitemapFile = path.join(ROOT, 'sitemap.xml');

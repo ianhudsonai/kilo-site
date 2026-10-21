@@ -57,20 +57,22 @@ const library = new Map();
 const used = [];
 for (const file of files) {
   const sql = fs.readFileSync(path.join(app, MIGRATIONS, file), 'utf8');
-  // Only statements that write exercise_catalog rows; anything else touching the table must be handled here by hand.
-  const statements = sql.split(/;\s*\n/).filter(s => /exercise_catalog/.test(s) && /\b(insert into|update)\s+exercise_catalog\b/.test(s));
+  // Every statement that writes exercise_catalog rows (with or without "public.") must be one this script reads; any other
+  // write (a delete, a new kind of update) stops the copy, so the site never keeps an exercise the app changed or dropped.
+  const statements = sql.split(/;\s*\n/).map(s => s.replace(/--[^\n]*/g, '')).filter(s => /\bexercise_catalog\b/.test(s));
   for (const statement of statements) {
-    used.push(file);
-    if (/^\s*(--[^\n]*\n\s*)*insert into exercise_catalog \(id, slug, name_en, name_pt, muscle_group, is_unilateral(, tip_en, tip_pt)?\) values/m.test(statement)) {
+    if (/^\s*insert into (public\.)?exercise_catalog \(id, slug, name_en, name_pt, muscle_group, is_unilateral(, tip_en, tip_pt)?\) values/.test(statement)) {
+      used.push(file);
       for (const [, slug, nameEn, namePt, muscle, unilateral, tipEn, tipPt] of tuples(statement.slice(statement.indexOf(' values')))) {
         library.set(slug, { slug, namePt, nameEn, muscle, unilateral, tipPt: tipPt ?? library.get(slug)?.tipPt ?? null, tipEn: tipEn ?? library.get(slug)?.tipEn ?? null });
       }
-    } else if (/update exercise_catalog c set tip_en = v\.tip_en, tip_pt = v\.tip_pt/.test(statement)) {
+    } else if (/^\s*update (public\.)?exercise_catalog c set tip_en = v\.tip_en, tip_pt = v\.tip_pt/.test(statement)) {
+      used.push(file);
       for (const [slug, tipEn, tipPt] of tuples(statement.slice(statement.indexOf('from (values')))) {
         if (!library.has(slug)) throw new Error(`${file}: tip for unknown exercise ${slug}`);
         Object.assign(library.get(slug), { tipEn, tipPt });
       }
-    } else if (/exercise_catalog/.test(statement.replace(/--[^\n]*/g, '')) && !/^\s*(alter table|create|grant|revoke|comment)/m.test(statement)) {
+    } else if (/\b(insert\s+into|update|delete\s+from|truncate(\s+table)?|merge\s+into)\s+(only\s+)?(public\.)?exercise_catalog\b/i.test(statement)) {
       throw new Error(`${file} writes exercise_catalog in a way this script does not read; update it`);
     }
   }
