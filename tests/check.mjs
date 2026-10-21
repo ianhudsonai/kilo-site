@@ -759,6 +759,115 @@ await check('a food page reads well on a phone in light and dark mode, and its b
   }
 });
 
+// The calculator (/calculadora/): the app's goal maths, run in the browser. data/goal-samples.json holds the app's own answers.
+const GOAL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/goal-samples.json'), 'utf8'));
+const CALC_TEXT = (() => {
+  const js = fs.readFileSync(path.join(ROOT, 'assets/calculator.js'), 'utf8');
+  const start = js.indexOf('var TEXT = ') + 'var TEXT = '.length;
+  return Function(`return ${js.slice(start, js.indexOf('\n  };', start) + 4)}`)();
+})();
+/** Fills the calculator like a visitor and presses Calcular (or Calculate). */
+async function calculate(page, { goal, sex, age, height, weight, activity }) {
+  const choose = async (group, value) => { if (value) await page.locator(`[data-group="${group}"] input[value="${value}"]`).check(); };
+  await choose('goal', goal); await choose('sex', sex);
+  await page.locator('#age').fill(String(age ?? '')); await page.locator('#height').fill(String(height ?? '')); await page.locator('#weight').fill(String(weight ?? ''));
+  await choose('activity', activity);
+  await page.locator('#calc button[type=submit]').click();
+}
+
+await check('the calculator gives the app\'s answer for every sample person, and refuses the same body numbers', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/calculadora/');
+  const got = await v.page.evaluate(samples => samples.map(s => window.KiloCalculator.propose(s.input)), GOAL.samples);
+  GOAL.samples.forEach((s, i) => expect(JSON.stringify(got[i]) === JSON.stringify(s.out), `${JSON.stringify(s.input)}: site ${JSON.stringify(got[i])}, app ${JSON.stringify(s.out)}`));
+  const problems = await v.page.evaluate(list => list.map(p => window.KiloCalculator.rangeProblem(p.input)), GOAL.problems);
+  GOAL.problems.forEach((p, i) => expect(problems[i] === p.problem, `${JSON.stringify(p.input)}: site ${problems[i]}, app ${p.problem}`));
+  await v.close();
+  return `${GOAL.samples.length} people, app commit ${GOAL.source.commit.slice(0, 7)}`;
+});
+
+await check('the calculator shows the target and the app\'s warnings, and nothing typed leaves the page', async () => {
+  const v = await visitor();
+  const requests = [];
+  v.page.on('request', r => requests.push(r.url()));
+  await v.page.goto(base + '/calculadora/');
+  await v.page.waitForLoadState('networkidle');
+  const loaded = requests.length;
+  const result = v.page.locator('#result');
+  // An adult losing weight: the numbers the app gives, in Portuguese format.
+  const adult = GOAL.samples.find(s => JSON.stringify(s.input) === JSON.stringify({ age: 30, heightCm: 175, weightKg: 80, sex: 'male', activity: 'light', goal: 'lose' })).out;
+  await calculate(v.page, { goal: 'lose', sex: 'male', age: 30, height: '1,75', weight: '80', activity: 'light' });
+  await result.waitFor();
+  expect(await result.locator('[data-kcal]').textContent() === adult.kcal.toLocaleString('pt-BR'), `kcal ${await result.locator('[data-kcal]').textContent()}`);
+  for (const key of ['protein', 'carbs', 'fat']) expect(await result.locator(`[data-${key}]`).textContent() === `${adult[key]} g`, `${key} differs`);
+  expect(await v.page.evaluate(() => document.activeElement.id) === 'result', 'focus does not move to the result');
+  // A small woman losing weight hits the safe minimum; the app's note shows.
+  await calculate(v.page, { goal: 'lose', sex: 'female', age: 45, height: 150, weight: '45', activity: 'sitting' });
+  expect(await result.innerText().then(t => t.includes(CALC_TEXT.pt.floor) || t.includes(CALC_TEXT.pt.lowBmi)), `no limit note: ${await result.innerText()}`);
+  // 17: maintenance only, with the app's words.
+  await calculate(v.page, { goal: 'lose', sex: 'male', age: 17, height: 180, weight: '70', activity: 'active' });
+  expect((await result.innerText()).includes(CALC_TEXT.pt.young) && (await result.innerText()).includes(CALC_TEXT.pt.paceMaintain), 'a 17-year-old does not get maintenance with the reason');
+  // Under 16: no target at all.
+  await calculate(v.page, { goal: 'lose', sex: 'female', age: 15, height: 160, weight: '50', activity: 'light' });
+  expect(await result.isHidden() && (await v.page.locator('#calc .status').textContent()) === CALC_TEXT.pt.tooYoung, 'a 15-year-old gets a target');
+  // Out of range and missing answers get the app's messages.
+  await calculate(v.page, { age: 30, height: 119, weight: '70', activity: 'light' });
+  expect((await v.page.locator('#calc .status').textContent()) === CALC_TEXT.pt.badHeight && await v.page.locator('#height').getAttribute('aria-invalid') === 'true', 'height 119 is accepted');
+  // The weight a calculator reports is never sent: no request after the page loaded, and the address is unchanged.
+  await v.page.waitForTimeout(300);
+  expect(requests.length === loaded, `requests after typing: ${requests.slice(loaded).join(', ')}`);
+  expect(v.page.url() === base + '/calculadora/', `the address changed to ${v.page.url()}`);
+  expect(v.leaks.length === 0 && v.sent.length === 0, `requests left the site: ${v.leaks.join(', ')}`);
+  expect(await v.page.locator('#calc input:not([type=radio])[name]').count() === 0, 'a number box has a name, so a form submit could carry it');
+  // The box opens the waitlist tagged seo-calc.
+  expect(await v.page.locator('[data-join-link]').getAttribute('href') === '/?origem=seo-calc', 'join link tag');
+  await v.close();
+});
+
+await check('the calculator speaks Portuguese and English, with its own address for Google in each', async () => {
+  const v = await visitor();
+  await v.page.goto(base + '/calculadora/');
+  await calculate(v.page, { goal: 'gain', sex: 'unspecified', age: 25, height: 185, weight: '95', activity: 'very' });
+  const seen = {};
+  for (const lang of ['pt', 'en']) {
+    if (lang === 'en') await v.page.getByRole('button', { name: 'English' }).click();
+    const texts = await v.page.evaluate(() => [...document.querySelectorAll('[data-t]')].map(el => [el.getAttribute('data-t'), el.textContent]));
+    for (const [key, text] of texts) expect(typeof CALC_TEXT[lang][key] === 'string' && text === CALC_TEXT[lang][key], `${lang} "${key}" shows "${text}"`);
+    seen[lang] = new Map(texts);
+    const head = await v.page.evaluate(() => ({ title: document.title, description: document.querySelector('meta[name=description]').content, canonical: document.querySelector('link[rel=canonical]')?.href, lang: document.documentElement.lang }));
+    expect(head.title === CALC_TEXT[lang].docTitle && head.description === CALC_TEXT[lang].docDescription, `${lang} title ${head.title}`);
+    expect(head.canonical === SITE + '/calculadora/' + (lang === 'en' ? '?lang=en' : ''), `${lang} canonical ${head.canonical}`);
+    expect(head.lang === (lang === 'en' ? 'en' : 'pt-BR'), `${lang} page language ${head.lang}`);
+  }
+  const untranslated = [...seen.pt].filter(([key, text]) => seen.en.get(key) === text && key !== 'home').map(([key]) => key);
+  expect(untranslated.length === 0, `same words in both languages: ${untranslated.join(', ')}`);
+  // The result redraws in English, and the waitlist link keeps the language.
+  expect((await v.page.locator('#result .pace').textContent()) === CALC_TEXT.en.paceGain, 'the result stays in Portuguese');
+  expect(await v.page.locator('[data-join-link]').getAttribute('href') === '/?origem=seo-calc&lang=en', 'English join link');
+  expect(v.page.url() === base + '/calculadora/?lang=en', `address ${v.page.url()}`);
+  await v.close();
+  const html = fs.readFileSync(path.join(ROOT, 'calculadora/index.html'), 'utf8');
+  expect(!/rel="canonical"/.test(html) && html.includes(`hreflang="en" href="${SITE}/calculadora/?lang=en"`), 'calculator HTML canonical or language links');
+  const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+  expect(sitemap.includes(`<loc>${SITE}/calculadora/</loc>`) && sitemap.includes(`<loc>${SITE}/calculadora/?lang=en</loc>`), 'sitemap lacks the calculator');
+  expect(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').includes('href="/calculadora/"'), 'the main page does not link to the calculator');
+});
+
+await check('the calculator fits a small phone in light and dark mode, and says why it can\'t work without JavaScript', async () => {
+  for (const colorScheme of ['light', 'dark']) {
+    const v = await visitor({ colorScheme, viewport: { width: 360, height: 740 } });
+    await v.page.goto(base + '/calculadora/');
+    await calculate(v.page, { goal: 'lose', sex: 'unspecified', age: 40, height: 190, weight: '130', activity: 'sitting' });
+    const wide = await v.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(wide <= 0, `${colorScheme}: scrolls sideways by ${wide}px`);
+    await v.close();
+  }
+  const n = await visitor({ javaScriptEnabled: false });
+  await n.page.goto(base + '/calculadora/');
+  expect(await n.page.locator('.needs-js').isVisible() && await n.page.locator('#calc').isHidden(), 'without JavaScript the form shows or the reason does not');
+  await n.close();
+});
+
 await check('no sideways scroll on a small phone in light and dark mode, or on a wide screen', async () => {
   for (const [colorScheme, viewport] of [['light', { width: 375, height: 667 }], ['dark', { width: 375, height: 667 }], ['light', { width: 1440, height: 900 }]]) {
     const v = await visitor({ viewport, colorScheme });

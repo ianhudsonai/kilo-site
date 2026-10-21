@@ -59,3 +59,32 @@ h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8
 
 footer { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 24px 0 40px; border-top: 1px solid var(--line); font-size: 0.9rem; color: var(--muted); }
 footer .note { flex-basis: 100%; margin: 0; }
+
+/* The calculator. */
+.top .lang { margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; padding: 6px 14px; cursor: pointer; }
+[hidden] { display: none !important; }
+.calc fieldset { border: 0; margin: 0 0 18px; padding: 0; min-width: 0; }
+.calc legend, .calc .numbers label { display: block; font-weight: 700; margin: 0 0 8px; padding: 0; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.choices.stack { flex-direction: column; }
+.choices label { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; cursor: pointer; background: var(--bg); }
+.choices label:has(input:checked) { border-color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+.choices input { width: 20px; height: 20px; margin: 0; accent-color: var(--link); flex: none; }
+.numbers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.numbers { margin: 0 0 18px; }
+.numbers p { margin: 0; }
+.numbers .hint { display: block; margin: 6px 0 0; font-size: 0.8rem; }
+.numbers input { width: 100%; font: inherit; font-size: 18px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); }
+.numbers input:focus, .choices input:focus-visible { outline: 3px solid var(--link); outline-offset: 1px; }
+.numbers input[aria-invalid="true"] { border-color: var(--error, #A12B1F); }
+.hint { color: var(--muted); font-size: 0.9rem; margin: 6px 0 18px; }
+.calc .status:not(:empty) { color: var(--error, #A12B1F); font-weight: 700; margin: 0 0 12px; }
+.calc .cta { border: 0; cursor: pointer; font: inherit; font-weight: 800; background: var(--accent); color: var(--on-accent); padding: 13px 22px; border-radius: 12px; }
+.calc .cta:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+.result:focus { outline: 3px solid var(--link); outline-offset: 2px; }
+.result .pace, .result .burn { margin: 12px 0 0; }
+.notes { margin: 12px 0 0; padding-left: 20px; }
+.notes li { margin: 0 0 6px; }
+.more p { margin: 0 0 12px; }
+@media (max-width: 420px) { .numbers { grid-template-columns: 1fr 1fr; } .numbers p:last-child { grid-column: 1 / -1; } }
+@media (prefers-color-scheme: dark) { :root { --error: #FF9B8C; } }
