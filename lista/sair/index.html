@@ -2,12 +2,25 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<script>
+// The leave code comes after # (#t=<code>), which browsers never send to the web host. It is read once and taken out of
+// the address before anything else loads. A code in ?t= is refused (it has already reached the host) and taken out too.
+(function () {
+  var query = new URLSearchParams(location.search);
+  var hash = new URLSearchParams(location.hash.slice(1));
+  var lang = (hash.get('lang') || query.get('lang')) === 'en' ? 'en' : 'pt';
+  window.KILO_LEAVE = { token: hash.get('t') || '', lang: lang };
+  if (query.has('t') || location.hash) {
+    try { history.replaceState(null, '', location.pathname + (lang === 'en' ? '?lang=en' : '')); } catch (e) {}
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="/favicon.ico?v=2" sizes="48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex">
-<meta name="referrer" content="no-referrer">
 <title>Kilo · Sair da lista de espera</title>
 <style>
   :root { --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE; --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --error: #A12B1F; }
@@ -51,9 +64,8 @@
 <script src="/lista/config.js"></script>
 <script>
 (function () {
-  var params = new URLSearchParams(location.search);
-  var lang = params.get('lang') === 'en' ? 'en' : 'pt';
-  var token = params.get('t') || '';
+  var lang = window.KILO_LEAVE.lang;
+  var token = window.KILO_LEAVE.token;
   if (lang === 'en') {
     document.documentElement.lang = 'en';
     document.title = 'Kilo · Leave the waitlist';
@@ -79,6 +91,7 @@
       body: JSON.stringify({ p_token: token })
     }).then(function (response) {
       if (!response.ok) throw new Error('status ' + response.status);
+      token = window.KILO_LEAVE.token = '';
       document.getElementById('ask').hidden = true;
       document.getElementById('done').hidden = false;
     }).catch(function () {
