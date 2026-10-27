@@ -28,7 +28,7 @@ The "Quanto custaria tudo isso?" block shows real Brazilian prices with no app o
 
 ## Leaving the waitlist (/lista/sair/)
 
-Each launch email carries its own link, `https://kiloapp.com.br/lista/sair/#t=<leave_token>` (`?lang=en#t=...` in English). The code goes after `#`, which browsers never send to the web host, and the page takes it out of the address as soon as it opens; a code in `?t=` is refused. Leaving takes a tap, so mail scanners that open the link don't take anyone off. The page loads no visitor counter and sends no Referer. The launch-email steps are in the app repo's `docs/support/data-requests-runbook.md`.
+Each launch email carries its own link, `https://kiloapp.com.br/lista/sair/#t=<leave_token>` (`?lang=en#t=...` in English). The code goes after `#`, which browsers never send to the web host, and the page takes it out of the address as soon as it opens; a code in `?t=` is refused. Leaving takes a tap, so mail scanners that only open the link don't take anyone off. The page loads no visitor counter and sends no Referer. The launch-email steps are in the app repo's `docs/support/data-requests-runbook.md`.
 
 ## Google and link previews
 
