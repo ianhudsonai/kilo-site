@@ -51,13 +51,15 @@ const results = [];
 
 /**
  * A fresh visitor: phone-sized unless told otherwise, with the waitlist faked. `reply` is what the join call answers;
- * `sent` collects every join call's body and `leaks` every request that tried to leave localhost.
+ * `sent` collects every join call's body, `left` every leave call's body, `asked` every address the page asked for (with the
+ * Referer it sent) and `leaks` every request that tried to leave localhost.
  */
 async function visitor({ viewport = PHONE, reply = { ok: true }, reducedMotion = 'no-preference', colorScheme = 'light', javaScriptEnabled = true } = {}) {
   const context = await browser.newContext({ viewport, reducedMotion, colorScheme, javaScriptEnabled, serviceWorkers: 'block' });
-  const sent = [], leaks = [];
-  await context.route('**/*', route => {
+  const sent = [], left = [], asked = [], leaks = [];
+  await context.route('**/*', async route => {
     const url = route.request().url();
+    asked.push(url + ' ' + (await route.request().headerValue('referer') || ''));
     if (url.startsWith(base)) return route.continue();
     // Umami's script gets an empty stand-in: the checks never count a visit on the real counter.
     if (url === 'https://cloud.umami.is/script.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
@@ -65,12 +67,16 @@ async function visitor({ viewport = PHONE, reply = { ok: true }, reducedMotion =
       sent.push(JSON.parse(route.request().postData() || '{}'));
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(typeof reply === 'function' ? reply() : reply) });
     }
+    if (url === WAITLIST + 'leave_waitlist' && route.request().method() === 'POST') {
+      left.push(JSON.parse(route.request().postData() || '{}'));
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    }
     leaks.push(url);
     return route.abort();
   });
   const page = await context.newPage();
   page.setDefaultTimeout(TIMEOUT);
-  return { page, sent, leaks, close: () => context.close() };
+  return { page, sent, left, asked, leaks, close: () => context.close() };
 }
 
 async function check(name, fn) {
@@ -1195,9 +1201,52 @@ await check('no sideways scroll on a small phone in light and dark mode, or on a
   }
 });
 
+// The leave code in an email link is a secret: anyone holding it can take that person off the list. It goes after # so the
+// web host never sees it, and the page takes it out of the address at once, so history, Referers and logs never hold it.
+const LEAVE_TOKEN = '3f2b8c1e-9d4a-4e7b-8c2f-5a6b7c8d9e0f';
+await check('the leave link keeps its code after #, out of the address, every request and every Referer, and leaves on a tap', async () => {
+  const links = [
+    { link: `/lista/sair/#t=${LEAVE_TOKEN}`, lang: 'pt', address: '/lista/sair/' },
+    { link: `/lista/sair/?lang=en#t=${LEAVE_TOKEN}`, lang: 'en', address: '/lista/sair/?lang=en' },
+    { link: `/lista/sair#t=${LEAVE_TOKEN}`, lang: 'pt', address: '/lista/sair/' },
+  ];
+  for (const { link, lang, address } of links) {
+    const v = await visitor();
+    await v.page.goto(base + link);
+    const button = v.page.getByRole('button', { name: lang === 'en' ? 'Leave the list' : 'Sair da lista' });
+    await button.waitFor({ timeout: 3000 });
+    expect(v.page.url() === base + address, `${link}: the address still reads ${v.page.url()}`);
+    expect(v.left.length === 0, `${link}: left the list before the tap`);
+    await button.click();
+    await v.page.getByRole('heading', { name: lang === 'en' ? 'Done, you are off the list.' : 'Pronto, você saiu da lista.' }).waitFor({ timeout: 3000 });
+    expect(v.left.length === 1 && v.left[0].p_token === LEAVE_TOKEN, `${link}: the leave call sent ${JSON.stringify(v.left)}`);
+    expect(v.page.url() === base + address, `${link}: after leaving the address reads ${v.page.url()}`);
+    const carried = v.asked.filter(line => line.includes(LEAVE_TOKEN));
+    expect(carried.length === 0, `${link}: the code went out in ${carried.join(', ')}`);
+    expect(!v.asked.some(line => line.includes('umami')), `${link}: the leave page loads the visitor counter`);
+    expect(v.leaks.length === 0, `${link}: requests left localhost: ${v.leaks.join(', ')}`);
+    await v.close();
+  }
+  // A code in ?t= has already reached the web host, so the page refuses it, says the link is incomplete and still wipes it.
+  for (const { link, heading, address } of [
+    { link: '/lista/sair/', heading: 'Link incompleto', address: '/lista/sair/' },
+    { link: `/lista/sair/?t=${LEAVE_TOKEN}`, heading: 'Link incompleto', address: '/lista/sair/' },
+    { link: `/lista/sair/?t=${LEAVE_TOKEN}&lang=en`, heading: 'Incomplete link', address: '/lista/sair/?lang=en' },
+    { link: '/lista/sair/#t=not-a-code', heading: 'Link incompleto', address: '/lista/sair/' },
+  ]) {
+    const v = await visitor();
+    await v.page.goto(base + link);
+    await v.page.getByRole('heading', { name: heading }).waitFor({ timeout: 3000 });
+    expect(v.page.url() === base + address, `${link}: the address still reads ${v.page.url()}`);
+    expect(!(await v.page.getByRole('button', { name: /Sair da lista|Leave the list/ }).isVisible()), `${link}: offers to leave`);
+    expect(v.left.length === 0 && v.leaks.length === 0, `${link}: sent ${JSON.stringify(v.left)} ${v.leaks.join(', ')}`);
+    await v.close();
+  }
+});
+
 await check('the leave and privacy pages still load', async () => {
   const v = await visitor();
-  await v.page.goto(base + '/lista/sair/?t=00000000-0000-4000-8000-000000000000');
+  await v.page.goto(base + `/lista/sair/#t=${LEAVE_TOKEN}`);
   await v.page.getByRole('button', { name: 'Sair da lista' }).waitFor({ timeout: 3000 });
   await v.page.goto(base + '/lista/privacidade/');
   await v.page.getByRole('heading', { name: /privacidade/i }).first().waitFor({ timeout: 3000 });

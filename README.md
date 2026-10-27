@@ -26,6 +26,10 @@ Each folder below forwards to the main page, which holds the waitlist form, with
 
 The "Quanto custaria tudo isso?" block shows real Brazilian prices with no app or company names. Each number's source link and check date sit in the HTML comment beside the block in `index.html`. Re-check them before launch and update the comment, the numbers and the month in the note together.
 
+## Leaving the waitlist (/lista/sair/)
+
+Each launch email carries its own link, `https://kiloapp.com.br/lista/sair/#t=<leave_token>` (`?lang=en#t=...` in English). The code goes after `#`, which browsers never send to the web host, and the page takes it out of the address as soon as it opens; a code in `?t=` is refused. Leaving takes a tap, so mail scanners that only open the link don't take anyone off. The page loads no visitor counter and sends no Referer. The launch-email steps are in the app repo's `docs/support/data-requests-runbook.md`.
+
 ## Google and link previews
 
 - `index.html`'s head holds the title, description, link-preview tags, language links (`?lang=en` is the English page) and the JSON-LD Google reads about the app and the questions. `site.js` swaps in the English words, address and FAQ on `?lang=en`. The FAQ in the JSON-LD must match the visible questions word for word; the check compares them.
