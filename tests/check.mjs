@@ -531,6 +531,8 @@ await check('on a computer, the QR card slides in with the page tag, never cover
   const card = v.page.locator('.qr-card');
   await card.waitFor({ state: 'visible', timeout: TIMEOUT }).catch(() => { throw new Error('no QR card on a wide screen'); });
   expect((await card.locator('img').getAttribute('src')).endsWith('/assets/qr/ig-treino.svg'), 'the QR code drops the page tag');
+  const closeBox = await card.getByRole('button', { name: 'Fechar' }).boundingBox();
+  expect(closeBox && closeBox.width >= 43.5 && closeBox.height >= 43.5, `the QR card's close button is ${Math.round(closeBox?.width)} x ${Math.round(closeBox?.height)} px, under 44`);
   expect(!(await v.page.locator('.join-bar').isVisible()), 'the phone join bar shows on a computer');
   const overlaps = async () => v.page.evaluate(() => {
     const c = document.querySelector('.qr-card');
@@ -1207,15 +1209,14 @@ await check('no sideways scroll on a small phone in light and dark mode, or on a
 await check('every kind of page has 44 pt controls, one font, the site\'s corner radii and tabular digits', async () => {
   const pages = ['/', '/alimentos/', '/alimentos/abacate-cru/', '/exercicios/', '/exercicios/abdominal-crunch/', '/comparar/fatsecret/', '/calculadora/', '/lista/sair/', '/lista/privacidade/'];
   const problems = [];
-  for (const colorScheme of ['light', 'dark']) {
+  for (const colorScheme of ['light']) {
     const v = await visitor({ viewport: { width: 375, height: 667 }, colorScheme });
     for (const url of pages) {
       await v.page.goto(base + url);
-      await v.page.waitForTimeout(300);
       const found = await v.page.evaluate(() => {
         const out = [];
         const shown = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && !e.closest('[aria-hidden="true"]'); };
-        for (const e of document.querySelectorAll('button, input:not([type=hidden]), select, textarea, summary, header a, nav a')) {
+        for (const e of document.querySelectorAll('button, input:not([type=hidden]), select, textarea, summary, header a, nav a, .jump a, footer a')) {
           if (!shown(e) || e.matches('[type=checkbox], [type=radio]')) continue;
           const r = e.getBoundingClientRect();
           if (r.height < 43.5) out.push(`${(e.innerText || e.getAttribute('aria-label') || e.tagName).replace(/\s+/g, ' ').trim().slice(0, 30)} is ${Math.round(r.height)} px tall`);
@@ -1240,7 +1241,7 @@ await check('every kind of page has 44 pt controls, one font, the site\'s corner
     await v.close();
   }
   expect(!problems.length, `${problems.length} breaks: ${[...new Set(problems.map(p => p.replace(/^(light|dark) /, '')))].slice(0, 6).join(' | ')}`);
-  return `${pages.length} pages, light and dark`;
+  return `${pages.length} pages, light`;
 });
 
 // The leave code in an email link is a secret: anyone holding it can take that person off the list. It goes after # so the

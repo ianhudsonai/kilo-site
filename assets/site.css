@@ -81,7 +81,7 @@ html.bar-up { scroll-padding-bottom: 96px; }
 .qr-card img { width: 112px; height: 112px; border-radius: 8px; }
 .qr-card p { margin: 0; font-size: 0.88rem; color: var(--muted); }
 .qr-card .qr-title { font-weight: 800; color: var(--text); font-size: 1rem; margin-bottom: 4px; }
-.qr-close { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
+.qr-close { position: absolute; top: 0; right: 0; width: 44px; height: 44px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
 .qr-close:focus-visible { outline: 3px solid var(--link); }
 @media (max-width: 899px) { .qr-card { display: none; } }
 @media (min-width: 900px) { .join-bar { display: none; } }
@@ -168,7 +168,7 @@ button.join:disabled { opacity: 0.6; cursor: default; }
 .faq details a { display: inline-block; margin: 0 0 16px; }
 
 footer { padding: 8px 0 40px; font-size: 0.88rem; color: var(--muted); }
-footer a { margin-right: 14px; }
+footer a { display: inline-flex; align-items: center; min-height: 44px; margin-right: 14px; }
 footer .note { margin: 14px 0 0; }
 
 @media (min-width: 900px) {
