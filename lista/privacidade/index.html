@@ -16,9 +16,9 @@
   main { max-width: 680px; margin: 0 auto; padding: 24px 16px 64px; }
   .mark { display: inline-flex; width: 48px; height: 48px; border-radius: 12px; background: var(--accent) url(/assets/img/icone.webp) center / cover; color: transparent; font-size: 0; text-decoration: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   nav { display: flex; gap: 10px; margin: 18px 0 8px; flex-wrap: wrap; }
-  nav a { border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; text-decoration: none; }
+  nav a { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--line); border-radius: 999px; padding: 0 16px; text-decoration: none; }
   h1 { font-size: 1.6rem; line-height: 1.2; margin: 8px 0 4px; }
-  h2 { font-size: 1.05rem; margin: 22px 0 4px; }
+  h2 { font-size: 1.2rem; margin: 26px 0 4px; }
   p { margin: 6px 0; }
   .meta { color: var(--muted); font-size: 0.9rem; }
   a { color: var(--link); font-weight: 600; }
@@ -27,8 +27,8 @@
 </head>
 <body>
 <main>
-  <a href="/lista/" class="mark" aria-label="Kilo">K</a>
-  <nav aria-label="Idioma / Language"><a href="#pt-br" hreflang="pt-BR">Português</a><a href="#en" hreflang="en">English</a><a href="/lista/">Lista de espera</a></nav>
+  <a href="/" class="mark" aria-label="Kilo">K</a>
+  <nav aria-label="Idioma / Language"><a href="#pt-br" hreflang="pt-BR">Português</a><a href="#en" hreflang="en">English</a><a href="/">Entrar na lista</a><a href="/?lang=en" lang="en" hreflang="en">Join the waitlist</a></nav>
 
   <section class="lang" id="pt-br" lang="pt-BR">
     <h1>Privacidade do site e da lista de espera</h1>

@@ -35,7 +35,8 @@
   .muted { color: var(--muted); }
   a { color: var(--link); font-weight: 600; }
   button { width: 100%; margin-top: 12px; font: inherit; font-weight: 700; padding: 14px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
-  button:disabled { opacity: 0.6; }
+  button:disabled { cursor: default; }
+  .back { display: inline-flex; align-items: center; min-height: 44px; }
   .error { color: var(--error); font-weight: 600; }
   [hidden] { display: none !important; }
 </style>
@@ -59,7 +60,7 @@
       <p data-pt="Abra o link direto do nosso e-mail, ou escreva para contato@kiloapp.com.br e tiramos você da lista." data-en="Open the link straight from our email, or write to contato@kiloapp.com.br and we will take you off the list.">Abra o link direto do nosso e-mail, ou escreva para contato@kiloapp.com.br e tiramos você da lista.</p>
     </div>
   </section>
-  <p class="muted"><a href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a></p>
+  <p class="muted"><a class="back" href="/" data-pt="Voltar ao site" data-en="Back to the site">Voltar ao site</a><br><a class="back" href="mailto:contato@kiloapp.com.br">contato@kiloapp.com.br</a></p>
 </main>
 <script src="/lista/config.js"></script>
 <script>
@@ -68,6 +69,7 @@
   var token = window.KILO_LEAVE.token;
   if (lang === 'en') {
     document.documentElement.lang = 'en';
+    document.querySelector('a.back[href="/"]').href = '/?lang=en';
     document.title = 'Kilo · Leave the waitlist';
     document.querySelectorAll('[data-en]').forEach(function (el) { el.textContent = el.getAttribute('data-en'); });
   }
@@ -85,6 +87,7 @@
     error.textContent = '';
     if (!config.url || !config.key) { error.textContent = failed; return; }
     button.disabled = true;
+    button.textContent = lang === 'en' ? 'Leaving…' : 'Saindo…';
     fetch(config.url + '/rest/v1/rpc/leave_waitlist', {
       method: 'POST',
       headers: { 'content-type': 'application/json', apikey: config.key },
@@ -97,6 +100,7 @@
     }).catch(function () {
       error.textContent = failed;
       button.disabled = false;
+      button.textContent = button.getAttribute('data-' + (lang === 'en' ? 'en' : 'pt'));
     });
   });
 })();
