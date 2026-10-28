@@ -104,7 +104,7 @@
       how5: 'Até 17 anos, a meta fica na manutenção. Abaixo de 16 anos, não há meta.',
       joinTitle: 'O Kilo sugere ajustes pelo seu progresso real',
       joinText: 'No app, a meta começa com esta conta. Toda semana, o check-in mostra como foi e sugere um ajuste na sua meta. Você decide se aceita.',
-      joinButton: 'Entrar na lista de espera', joinSmall: 'Grátis, sem anúncios. Primeiro no iPhone.',
+      joinHeader: 'Entrar na lista', joinButton: 'Entrar na lista de espera', joinSmall: 'Grátis, sem anúncios. Primeiro no iPhone.',
       footHome: 'Página inicial do Kilo', footFoods: 'Calorias dos alimentos', footExercises: 'Como fazer os exercícios',
       disclaimer: 'O Kilo é uma ferramenta de registro e não substitui orientação médica ou de um nutricionista.',
       toggle: 'English', toggleLang: 'en'
@@ -146,7 +146,7 @@
       how5: 'Under 18, the target stays at maintenance. Under 16, there is no target.',
       joinTitle: 'Kilo suggests adjustments from your real progress',
       joinText: 'In the app, your target starts with this maths. Every week, the check-in shows how it went and suggests an adjustment to your target. You decide whether to take it.',
-      joinButton: 'Join the waitlist', joinSmall: 'Free, with no ads. iPhone first.',
+      joinHeader: 'Join the list', joinButton: 'Join the waitlist', joinSmall: 'Free, with no ads. iPhone first.',
       footHome: 'Kilo home page', footFoods: 'Food calories (in Portuguese)', footExercises: 'Exercise how-tos (in Portuguese)',
       disclaimer: 'Kilo is a tracking tool and does not replace advice from a doctor or dietitian.',
       toggle: 'Português', toggleLang: 'pt-BR'
@@ -252,7 +252,7 @@
     each('[data-t]', function (el) { el.textContent = t[el.getAttribute('data-t')]; });
     each('[data-t-aria]', function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-t-aria')]); });
     if (status.dataset.key) status.textContent = t[status.dataset.key];
-    each('[data-join-link]', function (el) { el.href = '/?origem=seo-calc' + (lang === 'en' ? '&lang=en' : ''); });
+    each('[data-join-link], .head-cta', function (el) { el.href = '/?origem=seo-calc' + (lang === 'en' ? '&lang=en' : ''); });
     toggle.textContent = t.toggle;
     toggle.lang = t.toggleLang;
     try {

@@ -1244,6 +1244,33 @@ await check('the leave link keeps its code after #, out of the address, every re
   }
 });
 
+await check('the reading pages have a join button in the header, 44 px touch targets on a phone, and the index search box filters rows', async () => {
+  const v = await visitor();
+  const small = async () => v.page.evaluate(() => [...document.querySelectorAll('header a, header button, nav.crumbs a, footer a, ul.jump a, p.more a')]
+    .filter(el => el.offsetParent && el.getBoundingClientRect().height < 43.5).map(el => `${el.textContent.trim().slice(0, 30)} ${Math.round(el.getBoundingClientRect().height)}px`));
+  for (const [url, tag] of [['/alimentos/abacate-cru/', 'seo-food'], ['/alimentos/', 'seo-food'], ['/exercicios/agachamento-com-halteres/', 'seo-exercise'], ['/exercicios/', 'seo-exercise'], ['/comparar/myfitnesspal/', 'seo-compare'], ['/comparar/fatsecret/', 'seo-compare'], ['/calculadora/', 'seo-calc']]) {
+    await v.page.goto(base + url);
+    expect((await v.page.locator('header .head-cta').getAttribute('href')) === `/?origem=${tag}`, `${url} header button tag`);
+    const tooSmall = await small();
+    expect(tooSmall.length === 0, `${url} has touch targets under 44 px: ${tooSmall.join(', ')}`);
+    expect(await v.page.locator('.join-gorilla').getAttribute('alt') === '', `${url} gorilla should be decorative`);
+  }
+  for (const [url, query, other] of [['/alimentos/', 'pao frances', 'Arroz integral cozido'], ['/exercicios/', 'agachamento', 'Supino']]) {
+    await v.page.goto(base + url);
+    const rows = await v.page.locator('section.group li').count();
+    await v.page.locator('#finder-input').fill(query);
+    const shown = await v.page.locator('section.group li:visible').count();
+    expect(shown > 0 && shown < rows / 4, `${url} search "${query}" shows ${shown} of ${rows}`);
+    expect((await v.page.locator('section.group li:visible').allInnerTexts()).every(t => query.split(' ').every(w => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(w))), `${url} shows rows that do not match`);
+    expect(!(await v.page.locator('ul.jump').isVisible()), `${url} keeps the category chips while searching`);
+    await v.page.locator('#finder-input').fill('zzzzqq');
+    expect((await v.page.locator('.finder .none').innerText()).trim() !== '' && (await v.page.locator('section.group li:visible').count()) === 0, `${url} no empty message`);
+    await v.page.locator('#finder-input').fill('');
+    expect((await v.page.locator('section.group li:visible').count()) === rows, `${url} clearing the search does not bring every row back`);
+  }
+  await v.close();
+});
+
 await check('the leave and privacy pages still load', async () => {
   const v = await visitor();
   await v.page.goto(base + `/lista/sair/#t=${LEAVE_TOKEN}`);

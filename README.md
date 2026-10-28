@@ -22,6 +22,10 @@ Each folder below forwards to the main page, which holds the waitlist form, with
 
 `index.html` is the landing page: the pitch and the waitlist form, in Portuguese with an English switch (`?lang=en`). Its words are in `assets/site.js` (both languages; the HTML holds the Portuguese, so the page reads right before the script runs) and its look is in `assets/site.css`. The form calls the waitlist function set in `lista/config.js`. The consent line and the button label must stay word for word: the database records that people agreed to that wording.
 
+## Look and type
+
+Headings, the wordmark and buttons are set in Archivo, the app's typeface (variable font, Latin only, `assets/fonts/archivo-latin-wght.woff2`, SIL Open Font License in `assets/fonts/LICENSE-archivo.txt`). It is served from this site, so no font request leaves it; reading text stays in the phone's own font. Every link or button on the reading pages is at least 44 px tall on a phone (the site check measures it), and each page has a "Entrar na lista" button in its header, tagged `seo-food`, `seo-exercise`, `seo-compare` or `seo-calc`.
+
 ## Prices on the main page
 
 The "Quanto custaria tudo isso?" block shows real Brazilian prices with no app or company names. Each number's source link and check date sit in the HTML comment beside the block in `index.html`. Re-check them before launch and update the comment, the numbers and the month in the note together.
