@@ -37,7 +37,7 @@ const nearest = (list, item) => {
 
 // ---- Shared parts of every page ----
 
-function head({ title, description, url }) {
+function head({ title, description, url, tag }) {
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -62,12 +62,13 @@ function head({ title, description, url }) {
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><a class="brand" href="/"><span class="mark" aria-hidden="true">K</span>Kilo</a></header>
+  <header class="top"><a class="brand" href="/"><span class="mark" aria-hidden="true">K</span>Kilo</a><a class="head-cta" href="/?origem=${tag}">Entrar na lista</a></header>
 `;
 }
 
 /** The waitlist box, tagged for the page type so sign-ups are counted per kind of page. */
 const joinCard = ({ title, lead, tag }) => `  <section class="join-card" aria-labelledby="join-title">
+    <img class="join-gorilla" src="/assets/img/gorila.webp" width="204" height="360" alt="" loading="lazy" decoding="async">
     <h2 id="join-title">${title}</h2>
     <p>${lead}</p>
     <a class="cta" href="/?origem=${tag}">Entrar na lista de espera</a>
@@ -151,7 +152,7 @@ function foodPage(food) {
   const related = nearest(category.foods, food);
   const na = food.notApplicable ?? [];
   const naNote = na.length ? `    <p class="na">A TACO marca ${na.map(k => NA_WORDS[k]).join(na.length > 2 ? ', ' : ' e ').replace(/, ([^,]*)$/, ' e $1')} deste alimento como “não se aplica”; aqui ${na.length > 1 ? 'aparecem' : 'aparece'} como 0, como no app.</p>\n` : '';
-  return head({ title, description, url: food.url })
+  return head({ title, description, url: food.url, tag: 'seo-food' })
     + crumbs([['Kilo', '/'], ['Alimentos', `/${FOODS}/`], [category.name, `/${FOODS}/#${category.slug}`]])
     + `  <main>
   <h1>${escape(p)}</h1>
@@ -179,6 +180,7 @@ function foodIndex() {
     title: 'Calorias dos alimentos: Tabela TACO completa · Kilo',
     description: `Calorias, proteína, carboidrato e gordura em 100 g dos ${foods.length} alimentos da Tabela TACO (NEPA–UNICAMP), por categoria: arroz, feijão, frutas, carnes e mais.`,
     url: `/${FOODS}/`,
+    tag: 'seo-food',
   })
     + crumbs([['Kilo', '/'], ['Alimentos', null]])
     + `  <main>
@@ -192,6 +194,7 @@ ${groups.map(c => `  <section class="group" id="${c.slug}" aria-labelledby="h-${
   </section>
 `).join('')}  <p class="source">Fonte: <a href="${TACO_URL}">${CREDIT}</a>. Valores por 100 g da parte comestível.</p>
   </main>
+  <script src="/assets/index-filter.js" data-label="Buscar alimento" data-none="Nenhum alimento com esse nome. Tente outra palavra." defer></script>
 ` + footer();
 }
 
@@ -246,7 +249,7 @@ function exercisePage(exercise) {
   const description = tipped.length <= 160 ? tipped
     : `Como fazer ${n}${group.forWhat ? `, exercício para ${group.forWhat}` : ''}: uma dica curta de execução e exercícios parecidos.`;
   const english = englishName(exercise);
-  return head({ title, description, url: exercise.url })
+  return head({ title, description, url: exercise.url, tag: 'seo-exercise' })
     + crumbs([['Kilo', '/'], ['Exercícios', `/${EXERCISES}/`], [group.label, `/${EXERCISES}/#${group.slug}`]])
     + `  <main>
   <h1>${escape(n)}</h1>
@@ -272,6 +275,7 @@ function exerciseIndex() {
     title: 'Como fazer os exercícios da academia · Kilo',
     description: `Como fazer ${exercises.length} exercícios de academia, por grupo muscular: peito, costas, ombros, braços, pernas, glúteos, abdômen e cardio, cada um com uma dica curta.`,
     url: `/${EXERCISES}/`,
+    tag: 'seo-exercise',
   })
     + crumbs([['Kilo', '/'], ['Exercícios', null]])
     + `  <main>
@@ -284,6 +288,7 @@ ${groups.map(g => `  <section class="group" id="${g.slug}" aria-labelledby="h-${
     <ul class="list">${alphabetical(g.exercises).map(exerciseRow).join('')}</ul>
   </section>
 `).join('')}  </main>
+  <script src="/assets/index-filter.js" data-label="Buscar exercício" data-none="Nenhum exercício com esse nome. Tente outra palavra." defer></script>
 ` + footer('O Kilo é uma ferramenta de registro e não substitui orientação de um profissional de educação física ou de um médico.');
 }
 

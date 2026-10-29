@@ -1,26 +1,35 @@
-/* The Google pages (foods, exercises, the calculator): plain reading pages in the landing page's colours. */
+/* The Google pages (foods, exercises, the calculator): plain reading pages in the landing page's colours. Headings, the wordmark and buttons are set in Archivo (the app's typeface, self-hosted). */
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(/assets/fonts/archivo-latin-wght.woff2) format("woff2"); }
 :root {
   --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE;
-  --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --ink: #20231F; --on-ink: #F5F4EE; --field: #7D827A;
+  --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --ink: #20231F; --on-ink: #F5F4EE; --field: #7D827A; --placeholder: #5F655D; --error: #A12B1F; --display: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --ink: #F5F4E9; --on-ink: #171A19; --field: #858B80; }
+  :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --ink: #F5F4E9; --on-ink: #171A19; --field: #858B80; --placeholder: #A5AA9F; --error: #FF9B8C; }
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
 a { color: var(--link); font-weight: 600; }
+h1, h2, .brand, .cta, .head-cta { font-family: var(--display); }
+::placeholder { color: var(--placeholder); opacity: 1; }
 .wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 16px; }
 
-.top { display: flex; align-items: center; padding: 16px 0 8px; }
-.brand { display: inline-flex; align-items: center; min-height: 44px; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; font-size: 1.35rem; letter-spacing: -0.02em; }
+.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 0 8px; }
+.brand { min-height: 44px; margin-right: auto; }
+/* The way to the waitlist, in reach from the first screen of every page. */
+.head-cta { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 0.95rem; text-decoration: none; white-space: nowrap; }
+.head-cta:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; font-size: 1.35rem; letter-spacing: -0.02em; }
 /* The app icon; the K inside is only for browsers without CSS. */
-.mark { display: inline-flex; width: 40px; height: 40px; border-radius: 12px; background: var(--accent) url(/assets/img/icone.webp) center / cover; color: transparent; font-size: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.mark { display: inline-flex; width: 40px; height: 40px; border-radius: 11px; background: var(--accent) url(/assets/img/icone.webp) center / cover; color: transparent; font-size: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-.crumbs { font-size: 0.9rem; color: var(--muted); margin: 8px 0 0; }
-.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.crumbs { font-size: 0.9rem; color: var(--muted); margin: 0; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; }
+.crumbs li { display: flex; align-items: center; }
 .crumbs li + li::before { content: "›"; margin-right: 4px; }
-.crumbs a { font-weight: 500; display: inline-flex; align-items: center; min-height: 44px; }
+.crumbs a, .crumbs span { display: inline-flex; align-items: center; min-height: 44px; }
+.crumbs a { font-weight: 500; }
 
 h1 { font-size: clamp(1.9rem, 7vw, 2.8rem); line-height: 1.08; letter-spacing: -0.03em; font-weight: 850; margin: 14px 0 6px; overflow-wrap: anywhere; }
 h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8px; }
@@ -41,15 +50,21 @@ h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8
 .source { color: var(--muted); font-size: 0.9rem; margin: 0 0 28px; }
 
 /* The waitlist box, tagged for the page type, opening the main page's form. */
+/* The gorilla stands in the card's top right corner and the words wrap round him; the button always starts below him. His light edge keeps his charcoal fur visible on the charcoal card (light mode); in dark mode the card is light. */
 .join-card { background: var(--ink); color: var(--on-ink); border-radius: 18px; padding: 20px; margin: 0 0 32px; }
+.join-gorilla { float: right; width: 60px; height: auto; margin: -4px 0 6px 14px; filter: drop-shadow(0 0 1.5px rgba(245, 244, 233, 0.6)); }
+@media (prefers-color-scheme: dark) { .join-gorilla { filter: none; } }
 .join-card p { margin: 0 0 14px; }
-.join-card .cta { display: inline-block; background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 800; padding: 13px 20px; border-radius: 12px; }
+.join-card .cta { display: table; clear: both; background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 800; padding: 13px 20px; min-height: 48px; border-radius: 12px; }
+@media (max-width: 600px) { .join-card .cta { display: block; text-align: center; } }
+.join-card .small { clear: both; }
 .join-card .cta:focus-visible { outline: 3px solid var(--on-ink); outline-offset: 3px; }
 /* In dark mode the card is light, so the yellow button gets a dark edge. */
 @media (prefers-color-scheme: dark) { .join-card .cta { box-shadow: inset 0 0 0 2px var(--on-ink); } }
 .join-card .small { margin: 10px 0 0; font-size: 0.85rem; opacity: 0.8; }
 
 .more { margin: 0 0 32px; }
+.more > p a, p.more > a { display: inline-flex; align-items: center; min-height: 44px; }
 .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .list li { border-bottom: 1px solid var(--line); }
 .list a { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; text-decoration: none; font-weight: 500; color: var(--text); }
@@ -58,7 +73,7 @@ h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8
 .list b { font-weight: 600; overflow-wrap: anywhere; }
 
 .jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; padding: 0; list-style: none; }
-.jump a { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; text-decoration: none; }
+.jump a { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--line); border-radius: 999px; padding: 0 14px; font-size: 0.9rem; text-decoration: none; }
 .group { margin: 0 0 32px; scroll-margin-top: 16px; }
 
 /* The comparison pages: plain lists and a side-by-side table that wraps on a phone. */
@@ -66,18 +81,21 @@ h2 { font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8
 .points li { margin: 0 0 8px; }
 .compare-wrap { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 4px 14px; }
 .compare { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; }
-.compare th:first-child { width: 28%; }
-.compare th, .compare td { padding: 10px 6px 10px 0; text-align: left; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
+.compare th:first-child { width: 30%; }
+/* Kilo's column, the one the page is about, in a soft yellow. */
+.compare th:last-child, .compare td:last-child { background: color-mix(in srgb, var(--accent) 20%, transparent); padding-left: 8px; }
+.compare td:last-child { font-weight: 600; }
+.compare th, .compare td { padding: 10px 6px 10px 0; text-align: left; vertical-align: top; overflow-wrap: break-word; hyphens: manual; }
 .compare tbody tr { border-top: 1px solid var(--line); }
 .compare thead th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
 .compare tbody th { font-weight: 700; }
 
-footer { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 24px 0 40px; border-top: 1px solid var(--line); font-size: 0.9rem; color: var(--muted); }
-footer .note { flex-basis: 100%; margin: 0; }
+footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; padding: 24px 0 40px; border-top: 1px solid var(--line); font-size: 0.9rem; color: var(--muted); }
 footer a { display: inline-flex; align-items: center; min-height: 44px; }
+footer .note { flex-basis: 100%; margin: 10px 0 0; }
 
 /* The calculator. */
-.top .lang { margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; padding: 6px 14px; min-height: 44px; cursor: pointer; }
+.top .lang { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; min-height: 44px; padding: 0 16px; cursor: pointer; }
 [hidden] { display: none !important; }
 .calc fieldset { border: 0; margin: 0 0 18px; padding: 0; min-width: 0; }
 .calc legend, .calc .numbers label { display: block; font-weight: 700; margin: 0 0 8px; padding: 0; }
@@ -95,12 +113,20 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
 .numbers input[aria-invalid="true"] { border-color: var(--error, #A12B1F); }
 .hint { color: var(--muted); font-size: 0.9rem; margin: 6px 0 18px; }
 .calc .status:not(:empty) { color: var(--error, #A12B1F); font-weight: 700; margin: 0 0 12px; }
-.calc .cta { border: 0; cursor: pointer; font: inherit; font-weight: 800; background: var(--accent); color: var(--on-accent); padding: 13px 22px; border-radius: 12px; }
+.calc .cta { min-height: 48px; border: 0; cursor: pointer; font: inherit; font-family: var(--display); font-weight: 800; background: var(--accent); color: var(--on-accent); padding: 13px 22px; border-radius: 12px; }
 .calc .cta:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
 .result:focus { outline: 3px solid var(--link); outline-offset: 2px; }
 .result .pace, .result .burn { margin: 12px 0 0; }
 .notes { margin: 12px 0 0; padding-left: 20px; }
 .notes li { margin: 0 0 6px; }
 .more p { margin: 0 0 12px; }
+@media (max-width: 600px) { .calc .cta { width: 100%; } }
 @media (max-width: 420px) { .numbers { grid-template-columns: 1fr 1fr; } .numbers p:last-child { grid-column: 1 / -1; } }
-@media (prefers-color-scheme: dark) { :root { --error: #FF9B8C; } }
+
+/* The search box on the two long index pages: shown by index-filter.js, so without JavaScript the full lists stay. */
+.finder { margin: 0 0 20px; }
+.finder label { display: block; font-weight: 700; margin: 0 0 8px; }
+.finder input { width: 100%; font: inherit; font-size: 18px; padding: 12px 14px; border: 1px solid var(--field); border-radius: 12px; background: var(--card); color: var(--text); }
+.finder input:focus { outline: 3px solid var(--link); outline-offset: 1px; }
+.finder .none { margin: 12px 0 0; color: var(--muted); }
+.finder .none:empty { display: none; }

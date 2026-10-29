@@ -35,7 +35,7 @@
       screensTitle: 'Treino, comida e peso no mesmo app',
       screenTrainAlt: 'Resumo do treino no Kilo: novo recorde no supino, 62,5 kg × 8, e 2,5 kg a mais que da última vez',
       screenTrainTitle: 'Treino',
-      screenTrain1: 'Carga, repetições e RIR em cada série, com os números da última vez já preenchidos.',
+      screenTrain1: 'Carga, repetições e RIR (repetições em reserva) em cada série, com os números da última vez já preenchidos.',
       screenTrain2: 'No fim, um resumo com seus recordes e quanto você subiu em cada exercício.',
       screenFoodAlt: 'Dia de alimentação no Kilo: café da manhã com banana, ovo e pão francês, e arroz no almoço, com as calorias e os macros que faltam',
       screenFoodTitle: 'Alimentação',
@@ -116,7 +116,7 @@
       screensTitle: 'Workouts, food and weight in one app',
       screenTrainAlt: 'Kilo workout summary: a new bench press record, 62.5 kg × 8, and 2.5 kg more than last time',
       screenTrainTitle: 'Workouts',
-      screenTrain1: 'Weight, reps and RIR on every set, with last time\'s numbers already filled in.',
+      screenTrain1: 'Weight, reps and RIR (reps in reserve) on every set, with last time\'s numbers already filled in.',
       screenTrain2: 'At the end, a summary with your records and how much you went up on each exercise.',
       screenFoodAlt: 'A day of food in Kilo: banana, egg and a bread roll for breakfast, rice at lunch, with the calories and macros left',
       screenFoodTitle: 'Food',
@@ -238,6 +238,7 @@
     document.title = t.docTitle;
     document.querySelector('meta[name=description]').setAttribute('content', t.docDescription);
     each('[data-t]', function (el) { el.textContent = t[el.getAttribute('data-t')]; });
+    each('[data-only-lang]', function (el) { el.hidden = el.getAttribute('data-only-lang') !== lang; });
     each('[data-t-placeholder]', function (el) { el.placeholder = t[el.getAttribute('data-t-placeholder')]; });
     each('[data-t-alt]', function (el) { el.alt = t[el.getAttribute('data-t-alt')]; });
     each('[data-t-aria]', function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-t-aria')]); });
