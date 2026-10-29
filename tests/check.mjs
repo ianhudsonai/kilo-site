@@ -531,6 +531,8 @@ await check('on a computer, the QR card slides in with the page tag, never cover
   const card = v.page.locator('.qr-card');
   await card.waitFor({ state: 'visible', timeout: TIMEOUT }).catch(() => { throw new Error('no QR card on a wide screen'); });
   expect((await card.locator('img').getAttribute('src')).endsWith('/assets/qr/ig-treino.svg'), 'the QR code drops the page tag');
+  const closeBox = await card.getByRole('button', { name: 'Fechar' }).boundingBox();
+  expect(closeBox && closeBox.width >= 43.5 && closeBox.height >= 43.5, `the QR card's close button is ${Math.round(closeBox?.width)} x ${Math.round(closeBox?.height)} px, under 44`);
   expect(!(await v.page.locator('.join-bar').isVisible()), 'the phone join bar shows on a computer');
   const overlaps = async () => v.page.evaluate(() => {
     const c = document.querySelector('.qr-card');
@@ -1199,6 +1201,47 @@ await check('no sideways scroll on a small phone in light and dark mode, or on a
     expect(wide <= 0, `${colorScheme} at ${viewport.width}px: page is ${wide}px wider than the screen`);
     await v.close();
   }
+});
+
+// "The goal is met when" rules (Ian, 28 Oct 2026) that a browser can read, on one page of every kind: controls at least 44 pt tall, no
+// more than 2 fonts (the site uses the system font only), corner radii from one small set (cards 18, pieces inside them 12 or 8,
+// pills round), and every number drawn with tabular digits so nothing shifts when an amount changes.
+await check('every kind of page has 44 pt controls, one font, the site\'s corner radii and tabular digits', async () => {
+  const pages = ['/', '/alimentos/', '/alimentos/abacate-cru/', '/exercicios/', '/exercicios/abdominal-crunch/', '/comparar/fatsecret/', '/calculadora/', '/lista/sair/', '/lista/privacidade/'];
+  const problems = [];
+  for (const colorScheme of ['light']) {
+    const v = await visitor({ viewport: { width: 375, height: 667 }, colorScheme });
+    for (const url of pages) {
+      await v.page.goto(base + url);
+      const found = await v.page.evaluate(() => {
+        const out = [];
+        const shown = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && !e.closest('[aria-hidden="true"]'); };
+        for (const e of document.querySelectorAll('button, input:not([type=hidden]), select, textarea, summary, header a, nav a, .jump a, footer a')) {
+          if (!shown(e) || e.matches('[type=checkbox], [type=radio]')) continue;
+          const r = e.getBoundingClientRect();
+          if (r.height < 43.5) out.push(`${(e.innerText || e.getAttribute('aria-label') || e.tagName).replace(/\s+/g, ' ').trim().slice(0, 30)} is ${Math.round(r.height)} px tall`);
+        }
+        const fonts = new Set(), radii = new Set();
+        for (const e of document.querySelectorAll('body *')) {
+          if (!shown(e)) continue;
+          const cs = getComputedStyle(e), own = [...e.childNodes].filter(c => c.nodeType === 3).map(c => c.textContent).join('').trim();
+          if (own) {
+            fonts.add(cs.fontFamily.split(',')[0].replace(/["']/g, '').trim());
+            if (/\d/.test(own) && !/tabular-nums/.test(cs.fontVariantNumeric)) out.push(`"${own.slice(0, 30)}" has no tabular digits`);
+          }
+          const radius = parseFloat(cs.borderTopLeftRadius);
+          if (radius > 0 && radius < 99 && ![8, 12, 18].includes(radius) && (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px')) radii.add(radius);
+        }
+        if (fonts.size > 2) out.push(`${fonts.size} fonts: ${[...fonts].join(', ')}`);
+        for (const r of radii) out.push(`corner radius ${r}px is not 8, 12, 18 or a pill`);
+        return out;
+      });
+      for (const f of found) problems.push(`${colorScheme} ${url}: ${f}`);
+    }
+    await v.close();
+  }
+  expect(!problems.length, `${problems.length} breaks: ${[...new Set(problems.map(p => p.replace(/^(light|dark) /, '')))].slice(0, 400).join(' | ')}`);
+  return `${pages.length} pages, light`;
 });
 
 // The leave code in an email link is a secret: anyone holding it can take that person off the list. It goes after # so the
