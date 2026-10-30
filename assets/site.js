@@ -7,7 +7,7 @@
     pt: {
       docTitle: 'Kilo: o app de treino e dieta que aprende com você',
       docDescription: 'O Kilo sugere a carga da próxima série e, toda semana, um ajuste na sua meta pelo seu progresso real. Treino e dieta no mesmo app, grátis e sem anúncios. Em breve no iPhone: entre na lista de espera.',
-      eyebrow: 'Em breve no iPhone · Grátis',
+      eyebrow: 'Grátis. Em breve no iPhone.',
       headline: 'O app de treino e dieta que aprende com você.',
       lede: 'O Kilo sugere a carga da próxima série e, toda semana, um ajuste na sua meta pelo seu progresso real. Você só aceita.',
       phoneAlt: 'Tela de treino do Kilo: o supino da última vez, 3 séries de 60 kg, e o botão Aceitar sugestão',
@@ -88,7 +88,7 @@
     en: {
       docTitle: 'Kilo: the workout and diet app that learns from you',
       docDescription: 'Kilo suggests the weight for your next set and, every week, a change to your target based on your real progress. Workouts and diet in one app, free with no ads. Coming soon to iPhone: join the waitlist.',
-      eyebrow: 'Coming soon to iPhone · Free',
+      eyebrow: 'Free. Coming soon to iPhone.',
       headline: 'The workout and diet app that learns from you.',
       lede: 'Kilo suggests the weight for your next set and, every week, a change to your target based on your real progress. You just accept.',
       phoneAlt: 'Kilo workout screen: last time\'s bench press, 3 sets of 60 kg, and the Aceitar sugestão (Accept suggestion) button',

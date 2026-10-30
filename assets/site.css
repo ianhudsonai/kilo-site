@@ -4,10 +4,10 @@
   --bg: #F5F4EE; --card: #FFFFFF; --text: #20231F; --muted: #555C55; --line: #D8D9CE;
   --accent: #F3D438; --on-accent: #20231F; --link: #7D6400; --error: #A12B1F; --ink: #20231F; --on-ink: #F5F4EE;
   --radius: 18px; --shadow: 0 18px 40px rgba(32, 35, 31, 0.14);
-  --field: #7D827A; --placeholder: #5F655D; --display: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --alt: #EBE9DE; --raise: #FFFFFF; --field: #7D827A; --placeholder: #5F655D; --display: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --error: #FF9B8C; --ink: #F5F4E9; --on-ink: #171A19; --shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.14), 0 18px 40px rgba(0, 0, 0, 0.45); --field: #858B80; --placeholder: #A5AA9F; }
+  :root { --bg: #171A19; --card: #232725; --text: #F5F4E9; --muted: #BEC2B7; --line: #43483F; --link: #F3D438; --error: #FF9B8C; --ink: #F5F4E9; --on-ink: #171A19; --shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.14), 0 18px 40px rgba(0, 0, 0, 0.45); --alt: #202422; --raise: #2D3330; --field: #858B80; --placeholder: #A5AA9F; }
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
@@ -15,23 +15,23 @@ html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
 img { max-width: 100%; display: block; }
 a { color: var(--link); font-weight: 600; }
-h1, h2, h3, .brand, button.join, .eyebrow { font-family: var(--display); }
+h1, h2, h3, .brand, button.join, .launch { font-family: var(--display); }
 [hidden] { display: none !important; }
 
-.wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+.wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding: 0 16px; }
 
 /* Top bar */
 .top { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
 .brand { display: inline-flex; align-items: center; min-height: 44px; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; font-size: 1.35rem; letter-spacing: -0.02em; }
 /* The app icon; the K inside is only for browsers without CSS. */
 .mark { display: inline-flex; width: 40px; height: 40px; border-radius: 11px; background: var(--accent) url(/assets/img/icone.webp) center / cover; color: transparent; font-size: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.lang { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; min-height: 44px; padding: 0 16px; cursor: pointer; }
+.lang { background: var(--alt); border: 0; border-radius: 999px; color: var(--text); font: inherit; font-size: 0.9rem; min-height: 44px; padding: 0 16px; cursor: pointer; }
 
 /* Hero */
 .hero { display: grid; gap: 24px; padding: 4px 0 48px; }
-.eyebrow { display: inline-block; margin: 0 0 14px; padding: 5px 12px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.01em; }
-h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 850; margin: 0 0 14px; }
-.lede { font-size: 1.12rem; color: var(--muted); margin: 0 0 18px; max-width: 34em; }
+.launch { margin: 0 0 16px; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1; letter-spacing: -0.04em; font-weight: 850; margin: 0 0 12px; }
+.lede { font-size: 1.1rem; margin: 0 0 10px; max-width: 34em; }
 .lede strong { color: var(--text); }
 
 .phone-stage { display: flex; justify-content: center; }
@@ -73,13 +73,13 @@ h1 { font-size: clamp(2.2rem, 9.4vw, 4.4rem); line-height: 1.02; letter-spacing:
 main:focus { outline: none; }
 
 /* The phone join bar: slides up once the hero email box is gone, hides by either email box. Phones only. */
-.join-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); visibility: hidden; transform: translateY(110%); transition: transform 0.3s ease, visibility 0s 0.3s; }
+.join-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--card); box-shadow: 0 -10px 28px rgba(32, 35, 31, 0.16); visibility: hidden; transform: translateY(110%); transition: transform 0.3s ease, visibility 0s 0.3s; }
 html.bar-up { scroll-padding-bottom: 96px; }
 .join-bar.show { visibility: visible; transform: none; transition: transform 0.3s ease; }
 .join-bar button.join { margin: 0; padding: 12px; font-size: 17px; }
 
 /* The computer QR card: slides in from the right edge; closable. */
-.qr-card { position: fixed; right: 20px; bottom: 20px; z-index: 10; width: 300px; display: grid; grid-template-columns: 112px 1fr; gap: 14px; align-items: center; padding: 14px 34px 14px 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); visibility: hidden; transform: translateX(calc(100% + 40px)); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s 0.5s; }
+.qr-card { position: fixed; right: 20px; bottom: 20px; z-index: 10; width: 300px; display: grid; grid-template-columns: 112px 1fr; gap: 14px; align-items: center; padding: 14px 34px 14px 14px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); visibility: hidden; transform: translateX(calc(100% + 40px)); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s 0.5s; }
 .qr-card.show { visibility: visible; transform: none; transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); }
 .qr-card img { width: 112px; height: 112px; border-radius: 8px; }
 .qr-card p { margin: 0; font-size: 0.88rem; color: var(--muted); }
@@ -98,7 +98,8 @@ html.bar-up { scroll-padding-bottom: 96px; }
 @media (prefers-reduced-motion: reduce) { .gorilla.play { animation: none !important; } }
 
 /* The waitlist form, used in the hero and the closing block. */
-.join-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; max-width: 460px; }
+.join-box { background: var(--card); border-radius: var(--radius); padding: 18px; max-width: 480px; }
+@media (min-width: 900px) { .join-box { padding: 22px; } }
 .join-box label { display: block; font-weight: 700; margin-bottom: 8px; }
 .join-box input[type=email] { width: 100%; font: inherit; font-size: 18px; padding: 14px; border: 1px solid var(--field); border-radius: 12px; background: var(--bg); color: var(--text); }
 .join-box input::placeholder { color: var(--placeholder); opacity: 1; }
@@ -107,7 +108,7 @@ html.bar-up { scroll-padding-bottom: 96px; }
 button.join { width: 100%; margin-top: 12px; font: inherit; font-family: var(--display); font-weight: 800; font-size: 18px; padding: 15px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
 button.join:disabled { cursor: default; }
 .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
-.consent { margin: 12px 0 0; font-size: 0.88rem; color: var(--muted); }
+.consent { margin: 12px 0 0; font-size: 0.95rem; color: var(--muted); }
 .consent a { display: inline-block; padding: 14px 0; margin: -14px 0; }
 .status { margin: 10px 0 0; }
 .status:empty { display: none; }
@@ -119,78 +120,97 @@ button.join:disabled { cursor: default; }
 .small { font-size: 0.88rem; color: var(--muted); }
 
 /* Closing block */
-.closing { background: var(--ink); color: var(--on-ink); border-radius: var(--radius); padding: 32px 20px; margin: 24px 0 40px; display: grid; gap: 20px; }
-.closing h2 { font-size: clamp(1.8rem, 7vw, 3rem); line-height: 1.05; letter-spacing: -0.03em; margin: 0; }
-.closing-text p { margin: 12px 0 0; opacity: 0.85; }
+.closing { background: var(--ink); color: var(--on-ink); border-radius: var(--radius); padding: 32px 20px; margin: 56px 0; display: grid; gap: 20px; }
+.closing h2 { font-size: clamp(2rem, 7.4vw, 3rem); line-height: 1.05; letter-spacing: -0.03em; margin: 0; }
+.closing-text p { margin: 12px 0 0; }
 .closing .join-box { color: var(--text); }
 
 /* The sections between the hero and the closing block. */
-.band { padding: 40px 0; border-top: 1px solid var(--line); }
+.band { padding: 64px 0; }
 /* Colour bands, cut straight across the full width: the screens on charcoal, the promise on Kilo yellow. The shadow paints
    the colour out to the window's edges without widening the page; the clip keeps it from bleeding above or below. */
-.band.dark, .band.yellow { border-top: 0; box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(0 -100vmax); background: var(--band); color: var(--text); }
+.band.dark, .band.yellow, .band.alt { box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(0 -100vmax); background: var(--band); color: var(--text); }
+.band.alt { --band: var(--alt); }
 .band.dark { --band: #111312; --text: #F5F4E9; --muted: #BEC2B7; --line: #3A3F3A; --link: #F3D438; }
 .band.yellow { --band: #F3D438; --text: #20231F; --muted: #3B3E35; --line: #C9AE20; --link: #20231F; }
-.band.dark + .band, .band.yellow + .band { border-top: 0; }
 .band.dark h2, .band.yellow h2 { font-size: clamp(2rem, 8.4vw, 3.6rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
 .band.dark > h2 { text-align: center; margin-bottom: 8px; }
-.screens-note { text-align: center; margin: 0 auto; }
+.band .screens-note { text-align: center; margin: 0 auto 32px; max-width: none; }
 @media (prefers-color-scheme: dark) { .band.dark { --band: #050606; } }
 .band h2 { font-size: clamp(1.7rem, 6.4vw, 2.6rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 10px; }
-.band h3 { font-size: 1.15rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+.band h3 { font-size: 1.2rem; margin: 0 0 6px; letter-spacing: -0.015em; }
 .band p { margin: 0; }
-.band .intro { color: var(--muted); max-width: 36em; margin-bottom: 22px; }
-.learn { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
-/* Three things, not a card wall: a heavy rule on top of each, the words straight on the page. */
-.learn li { border-top: 2px solid var(--text); padding: 14px 0 0; }
-.learn p, .extras p, .screens p { color: var(--muted); }
+.band .intro { max-width: 36em; margin-bottom: 32px; font-size: 1.1rem; }
+.learn { list-style: none; margin: 0; padding: 0; display: grid; gap: 32px; }
+/* Three things, not a card wall: big titles, the words straight on the page. */
+.learn h3 { font-size: 1.5rem; line-height: 1.1; margin-bottom: 10px; }
+.learn p { font-size: 1.05rem; }
+.screens p { color: var(--muted); }
 .screens { display: grid; gap: 36px; margin-top: 24px; }
 .screens figure { margin: 0; display: grid; gap: 18px; justify-items: center; text-align: center; }
 .screens figcaption { max-width: 22em; }
 .screens figcaption p + p { margin-top: 6px; }
-.phone-shot { display: block; width: min(250px, 66vw); height: auto; margin: 0 auto; }
+.phone-shot { display: block; width: min(280px, 70vw); height: auto; margin: 0 auto; }
 /* Small things, so a ruled list: icon on the left, no boxes. */
-.extras { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; column-gap: 48px; border-top: 1px solid var(--line); }
-.extras li { display: grid; grid-template-columns: 28px 1fr; column-gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.extras h3 { font-size: 1rem; margin: 0 0 2px; }
-.extras p { font-size: 0.95rem; }
+.extras { list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 28px 64px; }
+.extras li { display: grid; grid-template-columns: 28px 1fr; column-gap: 16px; align-content: start; }
+.extras h3 { font-size: 1.1rem; margin: 0 0 2px; }
+.extras p { font-size: 1rem; }
 .extras svg { grid-row: 1 / span 2; width: 26px; height: 26px; margin-top: 1px; fill: none; stroke: var(--text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.promise p { max-width: 36em; font-size: 1.08rem; }
-.promise p + p { margin-top: 10px; color: var(--muted); }
-.price-list { list-style: none; margin: 0; padding: 0; max-width: 760px; border-top: 1px solid var(--line); }
-.price-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.price-list span { color: var(--muted); }
-.price-list strong { white-space: nowrap; font-size: 1.05rem; }
-.price-list li.kilo { border-bottom: 0; margin-top: 10px; padding: 16px 18px; border-radius: var(--radius); background: var(--accent); }
+.promise { display: grid; grid-template-columns: 1fr; column-gap: 24px; align-items: end; padding-bottom: 0; }
+@media (min-width: 900px) { .promise { grid-template-columns: 1fr auto; } }
+.promise p { max-width: 36em; font-size: 1.15rem; }
+.promise p + p { margin-top: 12px; }
+.promise-text { align-self: center; }
+.gorilla.stand { justify-self: end; width: 120px; margin-top: 8px; }
+.gorilla.stand.play { animation: gorilla-notes 1.6s ease-in-out 2; }
+.price-list { list-style: none; margin: 0; padding: 0; max-width: 760px; display: grid; gap: 6px; }
+.price-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; padding: 16px 20px; border-radius: 12px; background: var(--alt); }
+.price-list strong { white-space: nowrap; font-size: 1.2rem; font-family: var(--display); letter-spacing: -0.01em; }
+.price-list li.kilo { margin-top: 10px; padding: 28px 20px; border-radius: var(--radius); background: var(--accent); }
 .price-list li.kilo span, .price-list li.kilo strong { color: var(--on-accent); font-weight: 800; }
-.price-list li.kilo strong { font-size: 1.3rem; }
-.prices .note { margin-top: 14px; max-width: 46em; font-size: 0.88rem; color: var(--muted); }
-.faq { margin-top: 18px; border-top: 1px solid var(--line); max-width: 760px; }
-.faq details { border-bottom: 1px solid var(--line); }
-.faq summary { cursor: pointer; font-weight: 700; padding: 16px 30px 16px 0; list-style: none; position: relative; }
+.price-list li.kilo span { font-size: 1.1rem; }
+.price-list li.kilo strong { font-size: clamp(2rem, 8vw, 3.2rem); line-height: 1; letter-spacing: -0.03em; }
+.prices .note { margin-top: 20px; max-width: 46em; font-size: 0.95rem; color: var(--muted); }
+.faq { margin-top: 24px; max-width: 760px; display: grid; gap: 6px; }
+.faq details { background: var(--raise); border-radius: 12px; padding: 0 20px; }
+.faq summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; padding: 18px 34px 18px 0; list-style: none; position: relative; }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: "+" / ""; position: absolute; right: 4px; top: 12px; font-size: 1.4rem; font-weight: 400; color: var(--muted); }
+.faq summary::after { content: "+" / ""; position: absolute; right: 0; top: 13px; font-size: 1.6rem; font-weight: 400; color: var(--text); }
 .faq details[open] summary::after { content: "−" / ""; }
 .faq summary:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
-.faq details p { color: var(--muted); padding: 0 0 12px; }
+.faq details p { padding: 0 0 16px; }
 .faq details a { display: inline-flex; align-items: center; min-height: 44px; margin: 0 0 8px; }
 
-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; padding: 8px 0 40px; font-size: 0.88rem; color: var(--muted); }
+footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; padding: 8px 0 48px; font-size: 0.95rem; color: var(--muted); }
 footer a { display: inline-flex; align-items: center; min-height: 44px; }
 footer .note { flex-basis: 100%; margin: 10px 0 0; }
 
 @media (min-width: 900px) {
-  .hero { grid-template-columns: 1.15fr 0.85fr; align-items: center; padding: 24px 0 72px; }
-  .phone-3d { width: 340px; }
-  .gorilla.wave { width: 120px; left: calc(50% - 170px - 84px); }
+  /* The headline runs across both columns so it fits two lines at a big size; the words and form sit under it, the phone beside them. */
+  .hero { grid-template-columns: 1.1fr 0.9fr; grid-template-rows: auto auto auto 1fr; column-gap: 48px; row-gap: 12px; align-items: start; padding: 32px 0 24px; }
+  .hero > div:first-child { display: contents; }
+  .hero h1 { grid-column: 1 / -1; grid-row: 1; font-size: clamp(3.4rem, 6vw, 5.6rem); margin: 0 0 24px; }
+  .hero .lede, .hero .launch, .hero .join-box { grid-column: 1; }
+  .hero .phone-stage { grid-column: 2; grid-row: 2 / 5; }
+  .hero .join-box { align-self: start; }
+  .phone-3d { width: 330px; }
+  /* The gorilla stands beside the phone's upper half, so he is on the first screen and fills the gap under the form. */
+  .gorilla.wave { width: 130px; bottom: auto; top: 22%; left: calc(50% - 275px); }
   .gorilla.notes { width: 96px; }
   @keyframes gorilla-nudge { 0%, 60%, 100% { transform: translateX(0); } 30% { transform: translateX(10px) rotate(4deg); } }
   .gorilla.nudge { width: 120px; }
-  .closing { grid-template-columns: 1fr 1fr; align-items: center; padding: 48px; }
-  .band { padding: 64px 0; }
-  .learn { grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .closing { grid-template-columns: 1fr 1fr; align-items: center; padding: 64px; margin: 96px 0; }
+  .band { padding: 128px 0; }
+  .band.dark h2, .band.yellow h2 { font-size: clamp(2.6rem, 4.3vw, 4rem); }
+  .band h2 { font-size: clamp(2.2rem, 4vw, 3.4rem); }
+  .gorilla.stand { width: 220px; margin-top: 0; }
+  .promise-text { padding: 0 0 64px; }
+  .promise { padding-bottom: 0; }
+  .learn { grid-template-columns: repeat(3, 1fr); gap: 56px; }
+  .learn h3 { font-size: 1.8rem; }
   .screens { grid-template-columns: repeat(3, 1fr); align-items: start; }
-  .extras { grid-template-columns: 1fr 1fr; }
+  .extras { grid-template-columns: 1fr 1fr 1fr; gap: 48px 64px; }
   /* Prices and questions: the title and intro on the left, the list on the right, so a wide screen is not half empty. */
   .prices, #perguntas { display: grid; grid-template-columns: 5fr 7fr; column-gap: 64px; align-items: start; }
   .prices h2, #perguntas h2 { grid-column: 1; grid-row: 1; }
