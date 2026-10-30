@@ -157,13 +157,15 @@ button.join:disabled { cursor: default; }
 .extras h3 { font-size: 1.1rem; margin: 0 0 2px; }
 .extras p { font-size: 1rem; }
 .extras svg { grid-row: 1 / span 2; width: 26px; height: 26px; margin-top: 1px; fill: none; stroke: var(--text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.promise { display: grid; grid-template-columns: 1fr; column-gap: 24px; align-items: end; padding-bottom: 0; }
+.promise { display: grid; grid-template-columns: 1fr; column-gap: 24px; align-items: end; padding-bottom: 16px; }
 @media (min-width: 900px) { .promise { grid-template-columns: 1fr auto; } }
 .promise p { max-width: 36em; font-size: 1.15rem; }
 .promise p + p { margin-top: 12px; }
 .promise-text { align-self: center; }
 .gorilla.stand { justify-self: end; width: 120px; margin-top: 8px; }
-.gorilla.stand.play { animation: gorilla-notes 1.6s ease-in-out 2; }
+/* He only hops (no turning), and the band keeps room under his feet, so no part of him is ever cut off by the band's edge. */
+.gorilla.stand.play { animation: gorilla-hop 1.2s ease-in-out 2; }
+@keyframes gorilla-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
 .price-list { list-style: none; margin: 0; padding: 0; max-width: 760px; display: grid; gap: 6px; }
 .price-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; padding: 16px 20px; border-radius: 12px; background: var(--alt); }
 .price-list strong { white-space: nowrap; font-size: 1.2rem; font-family: var(--display); letter-spacing: -0.01em; }
@@ -205,8 +207,8 @@ footer .note { flex-basis: 100%; margin: 10px 0 0; }
   .band.dark h2, .band.yellow h2 { font-size: clamp(2.6rem, 4.3vw, 4rem); }
   .band h2 { font-size: clamp(2.2rem, 4vw, 3.4rem); }
   .gorilla.stand { width: 220px; margin-top: 0; }
-  .promise-text { padding: 0 0 64px; }
-  .promise { padding-bottom: 0; }
+  .promise-text { padding: 0 0 48px; }
+  .promise { padding-bottom: 24px; }
   .learn { grid-template-columns: repeat(3, 1fr); gap: 56px; }
   .learn h3 { font-size: 1.8rem; }
   .screens { grid-template-columns: repeat(3, 1fr); align-items: start; }
